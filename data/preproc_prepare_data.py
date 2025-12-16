@@ -1,10 +1,9 @@
 """
 SAILOR Dataset Preprocessing Script
 
-This script preprocesses SAILOR (brain tumor MRI) data by:
+This script preprocesses Lumiere (brain tumor MRI) data by:
 - Reading and reorienting NIfTI files
 - Normalizing image intensities
-- Merging segmentation masks
 - Saving processed data as numpy arrays
 
 Author: Brian
@@ -19,14 +18,15 @@ import torch
 from monai import transforms
 from torch.utils.data import Dataset, DataLoader
 from multiprocessing import Manager
-
-from reorient_nii import reorient
+from scipy.ndimage import zoom
+# from reorient_nii import reorient
 
 # Configure PyTorch multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 
-# Sailor Dataset root path
-sailor_raw_path = '/path_to_your/datasets/sailor_raw'
+ROOT_DIR = "/l/users/alaa.mohamed"
+lumiere_raw_path = f"{ROOT_DIR}/datasets/lumiere/lumiere"
+out_path = f"{ROOT_DIR}/datasets/lumiere_proc"
 
 # MRI modality indices
 # T1, T1C, FLAIR, T2 = 0, 1, 2, 3
@@ -39,47 +39,48 @@ ENHANCING = 3  # enhancing tumor
 
 # File naming conventions
 KEY_FILENAMES = {
-    "edema_mask": "EdemaMask-CL.nii.gz",
-    "et_mask": "ContrastEnhancedMask-CL.nii.gz",
-    "t1": "T1.nii.gz",
-    "t1c": "T1c.nii.gz",
-    "flair": "Flair.nii.gz",
-    "t2": "T2.nii.gz",
+    "mask": "segmentation.nii.gz",
+    "t1": "T1_r2s_bet_reg.nii.gz",
+    "t1c": "CT1_r2s_bet_reg.nii.gz",
+    "flair": "FLAIR_r2s_bet_reg.nii.gz",
+    "t2": "T2_r2s_bet_reg.nii.gz",
 }
 
-# Patient ID lists total 27 patients in raw sailor dataset
-ALL_PATIENT_IDS = [f'sub-{i:02d}' for i in range(1, 28)]
 
-# Valid patients (excluding those with missing/incorrect data)
-VALID_PATIENT_IDS = [
-    'sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-06', 'sub-07', 'sub-09',
-    'sub-10', 'sub-11', 'sub-13', 'sub-14', 'sub-16', 'sub-17', 'sub-27',
-    'sub-18', 'sub-23', 'sub-26', 'sub-05', 'sub-08', 'sub-12', 'sub-15',
-    'sub-20', 'sub-22', 'sub-21', 'sub-25', 'sub-19',
-]
+TARGET_SHAPE = (176, 256, 256)
 
-
-
-def read_nii(path, orientation_axcode='PLI', non_zero_norm=False, clip_percent=0.1):
+def resize_volume(volume, target_shape=TARGET_SHAPE):
     """
-    Read NIfTI file and return the data array.
-    
-    Args:
-        path (str): Path to the NIfTI file
-        orientation_axcode (str): Target orientation (e.g., 'PLI', 'RAS', 'LPI')
-        non_zero_norm (bool): Whether to normalize non-zero values
-        clip_percent (float): Percentile for intensity clipping (0-0.5)
-    
-    Returns:
-        np.ndarray: Image data array
+    volume: 3D numpy array (D, H, W)
+    returns: 3D array of shape target_shape
+    """
+    dz = target_shape[0] / volume.shape[0]
+    dh = target_shape[1] / volume.shape[1]
+    dw = target_shape[2] / volume.shape[2]
+
+    # Linear interpolation (order=1). You can experiment with others.
+    volume_resized = zoom(volume, (dz, dh, dw), order=1)
+    return volume_resized.astype(np.float32)
+
+def read_nii(path, non_zero_norm=False, clip_percent=0.1):
+    """
+    Read NIfTI file and return resized numpy array.
     """
     img = nib.load(path)
-    img = reorient(img, orientation_axcode)
+
+    # extract voxel data
     img_data = img.get_fdata()
-    
+
+    # OPTIONAL: reorient to a standard orientation (recommended)
+    # img_data = reorient(img_data)
+
+    # resize to target shape
+    img_data = resize_volume(img_data)
+
+    # optional normalization
     if non_zero_norm:
         img_data = nonzero_norm_image(img_data, clip_percent=clip_percent)
-    
+
     return img_data
 
 
@@ -125,78 +126,93 @@ def nonzero_norm_image(image, clip_percent=0.1):
     return image
 
 
-def get_session_list(file_csv=os.path.join(sailor_raw_path, "sailor_info.csv")):
+def get_session_list(file_csv="data/lumiere.csv"):
     """
-    Load time sessions and intervals  information from CSV file.
+    Load time sessions and interval information from CSV file.
     
     Args:
-        file_csv (str): Name of the CSV file containing patient information
+        file_csv (str): Path to CSV file
     
     Returns:
-        tuple: (times_list, treatment_list) dictionaries keyed by patient ID
-            - times_list: Cumulative days from baseline for each session
-            - treatment_list: Treatment type (0: CRT, 1: TMZ, 2: None, 3: Unknown)
+        times_list: dict patient_id -> array of session days
+        treatment_list: dict patient_id -> array of treatment codes (0/1)
     """
     times_list = {}
     treatment_list = {}
     
-    df = pd.read_csv(os.path.join(sailor_raw_path, file_csv))
-    df.set_index("patients", inplace=True)
-    
-    for patient_id in ALL_PATIENT_IDS:
-        # Parse interval days string to array
-        inv_times = df['interval_days'].loc[patient_id]
-        time_inv = np.array([int(s) for s in inv_times[1:-1].split(",")])
-        
-        # Insert baseline (day 0)
-        times_list[patient_id] = np.insert(time_inv, 0, 0)
-        
-        # Treatment encoding: 0=CRT (sessions 0-3), 1=TMZ (sessions 4+)
-        treatment_list[patient_id] = np.array(
-            [1 if i > 3 else 0 for i in range(len(time_inv) + 1)]
-        )
-    
+    df = pd.read_csv(file_csv)
+
+    for _, row in df.iterrows():
+        patient_id = row["patients"]
+
+        # Parse interval_days string (e.g. "[7, 14, 21]")
+        inv_times = row["interval_days"]
+        time_inv = np.array([int(s) for s in inv_times.strip("[]").split(",") if s.strip()])
+
+        # Ensure a baseline 0 exists
+        if len(time_inv) == 0 or time_inv[0] != 0:
+            times = np.insert(time_inv, 0, 0)
+        else:
+            times = time_inv
+
+        # Store in times_list  <-- FIXED
+        times_list[patient_id] = times
+
+        # Treatment encoding: CRT (0) for first 4 sessions, TMZ (1) afterwards
+        treatment_list[patient_id] = np.array([0 if i <= 3 else 1 for i in range(len(times))])
+
     return times_list, treatment_list
 
 
-def get_file_dict(patient_ids=VALID_PATIENT_IDS, root=sailor_raw_path):
+def get_file_dict(root=lumiere_raw_path, csv_path="data/lumiere.csv"):
     """
-    Create a nested dictionary of file paths for all patients and sessions.
-    
-    Args:
-        patient_ids (list): List of patient IDs to process
+    Create a nested dictionary of file paths for only the patients listed in the CSV.
     
     Returns:
-        dict: Nested dict structure:
+        dict: 
             {patient_id: {session_id: {modality: filepath}}}
     """
     file_dict = {}
-    
+
+    # --- Load patient IDs from CSV ---
+    df = pd.read_csv(csv_path)
+    csv_patient_ids = sorted(df["patients"].unique())
+
+    # --- Get only folders that match the CSV patient IDs ---
+    patient_ids = [
+        f.name
+        for f in os.scandir(root)
+        if f.is_dir() and f.name in csv_patient_ids
+    ]
+
     for patient_id in patient_ids:
         sessions = {}
         patient_path = os.path.join(root, patient_id)
-        
-        # Get all session directories
+
+        # Get session directories inside patient folder
         session_ids = sorted([
-            os.path.basename(f.path)
+            f.name
             for f in os.scandir(patient_path)
             if f.is_dir()
         ])
-        
+
         # Build file paths for each session
         for session_id in session_ids:
+            session_path = os.path.join(root, patient_id, session_id)
+
             files = {
-                key: os.path.join(root, patient_id, session_id, filename)
+                key: os.path.join(session_path, filename)
                 for key, filename in KEY_FILENAMES.items()
             }
+
             sessions[session_id] = files
-        
+
         file_dict[patient_id] = sessions
-    
+
     return file_dict
 
 
-def save_session_data(file_dict=None, save_path='./sailor', root=sailor_raw_path):
+def save_session_data(file_dict=None, save_path=out_path, root=lumiere_raw_path):
     """
     Process and save all patient data as numpy arrays.
     
@@ -217,7 +233,7 @@ def save_session_data(file_dict=None, save_path='./sailor', root=sailor_raw_path
     
     os.makedirs(save_path, exist_ok=True)
     
-    session_list, treatment_list = get_session_list(os.path.join(root, "sailor_info.csv"))
+    session_list, treatment_list = get_session_list()
     patient_ids = list(file_dict.keys())
     
     for patient_id in patient_ids:
@@ -235,6 +251,7 @@ def save_session_data(file_dict=None, save_path='./sailor', root=sailor_raw_path
                 # Load and normalize image
                 img_path = file_dict[patient_id][session_id][modality]
                 img = read_nii(img_path, non_zero_norm=True, clip_percent=0.2)
+                # print(f"Modality {modality}, session {session_id} , shape: {img.shape}")
                 images.append(img)
                 
                 # Load and merge segmentation masks (only once per session)
@@ -242,17 +259,16 @@ def save_session_data(file_dict=None, save_path='./sailor', root=sailor_raw_path
                     merged_labels = np.zeros_like(img)
                     
                     # Edema mask
-                    edema_path = file_dict[patient_id][session_id]['edema_mask']
-                    edema = read_nii(edema_path)
-                    merged_labels[edema > 0] = EDEMA
+                    mask_path = file_dict[patient_id][session_id]['mask']
+                    mask = read_nii(mask_path)
+                    merged_labels[mask > 0] = ENHANCING
                     
-                    # Enhancing tumor mask
-                    et_path = file_dict[patient_id][session_id]['et_mask']
-                    et = read_nii(et_path)
-                    merged_labels[et > 0] = ENHANCING
+
                     
                     labels.append(merged_labels.astype(np.int8))
         
+        # for i, img in enumerate(images):
+        #     print(f"Image {i} shape: {img.shape}")
         # Stack and save
         image = np.stack(images, axis=0).astype(np.float32)
         label = np.stack(labels, axis=0).astype(np.int8)
@@ -278,14 +294,14 @@ def save_session_data(file_dict=None, save_path='./sailor', root=sailor_raw_path
 if __name__ == "__main__":
     """Sanity check and run preprocessing"""
     
-    # Verify file structure
-    # file_dict = get_file_dict(patient_ids=VALID_PATIENT_IDS, root=ROOT)
-    file_dict = get_file_dict(patient_ids=['sub-17'], root=sailor_raw_path)
-    print(f'Total patients: {len(file_dict)}')
-    print(f'Patient IDs: {list(file_dict.keys())}')
-    print(f"\nExample - sub-17 sessions: {list(file_dict['sub-17'].keys())}")
-    print(f"Example - sub-17/ses-01 files: {list(file_dict['sub-17']['ses-01'].keys())}")
+    # # Verify file structure
+    # # file_dict = get_file_dict(patient_ids=VALID_PATIENT_IDS, root=ROOT)
+    # file_dict = get_file_dict(patient_ids=['sub-17'], root=sailor_raw_path)
+    # print(f'Total patients: {len(file_dict)}')
+    # print(f'Patient IDs: {list(file_dict.keys())}')
+    # print(f"\nExample - sub-17 sessions: {list(file_dict['sub-17'].keys())}")
+    # print(f"Example - sub-17/ses-01 files: {list(file_dict['sub-17']['ses-01'].keys())}")
     
     # Run preprocessing
     print("\nStarting preprocessing...\n")
-    save_session_data(file_dict=file_dict, root=sailor_raw_path, save_path='./custom_output')
+    save_session_data()

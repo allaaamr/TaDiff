@@ -233,7 +233,6 @@ class Tadiff_model(LightningModule):
         self.log("val_dice", dice.item(), sync_dist=True, prog_bar=False) # on_epoch=True default
         return {"val_loss": loss, "val_mse": mse, "val_dice": dice}
 
-
 class MyCallback(Callback):
     def __init__(self, batch, config):
         super().__init__()

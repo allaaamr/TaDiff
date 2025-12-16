@@ -7,7 +7,7 @@ data_pool = ['sailor', 'lumiere']
 # ms3
 data_dir = {'sailor': '/home/brian/project/pl_ddpm/src/data/sailor_npy', 
             # 'sailor': '/home/brian/project/pl_ddpm/data_cp/sailor_npy',
-            'lumiere': '/home/brian/project/pl_ddpm/src/data/lumiere_npy'}
+            'lumiere': '/l/users/alaa.mohamed/datasets/lumiere_proc'}
 # # ms 2
 # data_dir = {'sailor': '/mnt/CRAI-NAS/all/brian/dataset/sailor_npy', 
 #             'lumiere': '/mnt/CRAI-NAS/all/brian/dataset/lumiere_npy'}
