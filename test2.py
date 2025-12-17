@@ -1,8 +1,11 @@
 import numpy as np
 
 # Load data
-img = np.load('data/sailor/sub-17_image.npy')
-lbl = np.load('data/sailor/sub-17_label.npy')
+# img = np.load('data/sailor/sub-17_image.npy')
+# lbl = np.load('data/sailor/sub-17_label.npy')
+
+img = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-002_image.npy')
+lbl = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-002_label.npy')
 
 # Check shapes
 print(f"Image: {img.shape}")  # e.g., (24, 240, 240, 155) = 4 modalities × 6 sessions

@@ -819,10 +819,9 @@ class TaDiff_Net(nn.Module):
         # target =  th.cat([treat_day_sum[[i], j, :] for i, j in zip(range(b), i_tg)], dim=0) # b, dim
         
         if b == 1:
-            target = treat_day_sum[:, i_tg.long(), :]
+            target = treat_day_sum[:, i_tg.long(), :].squeeze(1)  # Remove extra dim
         else:
-            target =  th.cat([treat_day_sum[[i], j, :] for i, j in zip(range(b), i_tg)], dim=0) # b, dim
-        
+            target = th.cat([treat_day_sum[[i], j, :] for i, j in zip(range(b), i_tg)], dim=0)
         treat_day_diff = treat_day_sum - target[:, None, :]
         
         middle_emb = emb + target
