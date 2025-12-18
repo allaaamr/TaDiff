@@ -17,7 +17,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List
 from tqdm import tqdm
-
+import wandb
 from monai.data import CacheDataset, DataLoader
 
 # Add project root to path
@@ -30,6 +30,86 @@ from src.data.data_loader import val_transforms, npz_keys
 from src.evaluation.metrics import calculate_tumor_volumes, get_slice_indices
 from src.utils.image_processing import prepare_image_batch
 
+
+from torch.utils.data import Dataset
+
+
+class SlidingWindowDataset(Dataset):
+    """
+    Creates multiple training samples from each patient using sliding windows.
+    Each window contains exactly 4 consecutive sessions.
+    """
+    def __init__(self, file_dicts: List[Dict], transform=None):
+        self.transform = transform
+        self.samples = []
+        self.samples = [] 
+        for file_dict in file_dicts: # Load to check number of sessions 
+            labels = np.load(file_dict['label']) # [S, D, H, W] 
+            n_sessions = labels.shape[0] # Create sliding windows 
+            if n_sessions >= 4: 
+                for start_idx in range(n_sessions - 3):
+                    self.samples.append({ 
+                        'file_dict': file_dict, 
+                        'start_idx': start_idx, 
+                        'end_idx': start_idx + 4 }) 
+    
+    def __len__(self):
+        return len(self.samples)
+    
+    def __getitem__(self, idx):
+        sample = self.samples[idx]
+        file_dict = sample['file_dict']
+        start_idx = sample['start_idx']
+        end_idx = sample['end_idx']
+        
+        # Load full data from disk
+        data = {}
+        for key in npz_keys:
+            data[key] = np.load(file_dict[key])
+        
+        img_full = data['image']  # shape: (24,D,  H, W) = 4 modalities × 6 sessions
+        lbl_full = data['label']  # shape: (S, D, H, W)
+        days_full = data['days']  # shape: (S,)
+        treat_full = data['treatment']  # shape: (S,)
+
+        # --- reshape image: (C_full * S_all, D, H, W) -> (S_all, C_use, H, W, D) ---
+
+        S_all = lbl_full.shape[0]             # number of sessions (e.g. 6)
+        C_times_S, D, H, W = img_full.shape   # 24, 155, 240, 240
+        C_full = C_times_S // S_all           # 24 // 6 = 4 modalities
+
+        assert C_full * S_all == C_times_S, \
+            f"image first dim ({C_times_S}) is not divisible by #sessions ({S_all})"
+
+        # reshape to (C_full, S_all, H, W, D)
+        img_full = img_full.reshape(C_full, S_all, H, W, D)
+
+        # keep only first 3 modalities: (3, S_all, H, W, D)
+        img_full = img_full[:3, ...]
+        C_use = img_full.shape[0]            
+
+        # move sessions to first axis: (S_all, C_use, H, W, D)
+        img_full = np.transpose(img_full, (1, 0, 2, 3, 4))
+
+        img_win   = img_full[start_idx:end_idx, ...]     # [S_win, 3, H, W, D]
+        lbl_win   = lbl_full[start_idx:end_idx, ...]     # [S_win, H, W, D]
+        days_win  = days_full[start_idx:end_idx]         # [S_win]
+        treat_win = treat_full[start_idx:end_idx]        # [S_win]
+
+    
+        # print("img_win", img_win.shape)    
+        windowed_data = {
+            'image': img_win,       # [S_win, C=3, H, W, D]
+            'label': lbl_win,       # [S_win, H, W, D]
+            'days': days_win,       # [S_win]
+            'treatment': treat_win  # [S_win]
+        }
+
+        # Apply transforms if any (you currently use transform=None)
+        if self.transform:
+            windowed_data = self.transform(windowed_data)
+        
+        return windowed_data
 
 def process_slice_train(
     slice_idx: int,
@@ -72,40 +152,41 @@ def process_slice_train(
     n_sessions = imgs_slice.shape[1]
     n_timepoints = days.shape[1]
     
-    print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
-    print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    print(f"  days: {days.shape}, treatments: {treatments.shape}")
+    # print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
+    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
+    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
     
-    # Model expects exactly 4 sessions and 4 timepoints
-    # Select last 4 sessions (most recent)
-    if n_sessions > 4:
-        imgs_slice = imgs_slice[:, -4:, :, :, :]  # [1, 4, C, H, W]
-        labels_slice = labels_slice[:, -4:, :, :]  # [1, 4, H, W]
-    elif n_sessions < 4:
-        # Pad by repeating last session
-        pad_sessions = 4 - n_sessions
-        imgs_slice = torch.cat([
-            imgs_slice,
-            imgs_slice[:, -1:, :, :, :].repeat(1, pad_sessions, 1, 1, 1)
-        ], dim=1)
-        labels_slice = torch.cat([
-            labels_slice,
-            labels_slice[:, -1:, :, :].repeat(1, pad_sessions, 1, 1)
-        ], dim=1)
+    # # Model expects exactly 4 sessions and 4 timepoints
+    # # Select last 4 sessions (most recent)
     
-    # Select corresponding timepoints (last 4)
-    if n_timepoints > 4:
-        days = days[:, -4:]  # [1, 4]
-        treatments = treatments[:, -4:]  # [1, 4]
-    elif n_timepoints < 4:
-        # Pad by repeating last timepoint
-        pad_timepoints = 4 - n_timepoints
-        days = torch.cat([days, days[:, -1:].repeat(1, pad_timepoints)], dim=1)
-        treatments = torch.cat([treatments, treatments[:, -1:].repeat(1, pad_timepoints)], dim=1)
+    # if n_sessions > 4:
+    #     imgs_slice = imgs_slice[:, -4:, :, :, :]  # [1, 4, C, H, W]
+    #     labels_slice = labels_slice[:, -4:, :, :]  # [1, 4, H, W]
+    # elif n_sessions < 4:
+    #     # Pad by repeating last session
+    #     pad_sessions = 4 - n_sessions
+    #     imgs_slice = torch.cat([
+    #         imgs_slice,
+    #         imgs_slice[:, -1:, :, :, :].repeat(1, pad_sessions, 1, 1, 1)
+    #     ], dim=1)
+    #     labels_slice = torch.cat([
+    #         labels_slice,
+    #         labels_slice[:, -1:, :, :].repeat(1, pad_sessions, 1, 1)
+    #     ], dim=1)
     
-    print(f"[AFTER SELECTION]")
-    print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    print(f"  days: {days.shape}, treatments: {treatments.shape}")
+    # # Select corresponding timepoints (last 4)
+    # if n_timepoints > 4:
+    #     days = days[:, -4:]  # [1, 4]
+    #     treatments = treatments[:, -4:]  # [1, 4]
+    # elif n_timepoints < 4:
+    #     # Pad by repeating last timepoint
+    #     pad_timepoints = 4 - n_timepoints
+    #     days = torch.cat([days, days[:, -1:].repeat(1, pad_timepoints)], dim=1)
+    #     treatments = torch.cat([treatments, treatments[:, -1:].repeat(1, pad_timepoints)], dim=1)
+    
+    # print(f"[AFTER SELECTION]")
+    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
+    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
     
     # Expand labels to 4 channels (model expects [B, S, 4, H, W])
     # labels_slice = labels_slice.unsqueeze(2).repeat(1, 1, 4, 1, 1)  # [1, 4, 4, H, W]
@@ -167,24 +248,27 @@ def process_session_train(
         Averaged metrics across slices
     """
     # Extract tensors
-    labels = batch['label'].to(device)  # [1, S, D, H, W] from MONAI
+    labels = batch['label'].to(device)  # [1, S,  H, W, D] from MONAI
     images = batch['image'].to(device)  # [1, C*S, D, H, W] from MONAI
     days = batch['days'].to(device)
     treatments = batch['treatment'].to(device)
-    
-    # Reorder dimensions: [B, ..., D, H, W] -> [B, ..., H, W, D]
-    images = images.permute(0, 1, 3, 4, 2)  # [1, C*S, H, W, D]
+    # print("images.shape ", images.shape)
+
+
+    # # Reorder dimensions: [B, ..., D, H, W] -> [B, ..., H, W, D]
+    # images = images.permute(0, 1, 3, 4, 2)  # [1, C*S, H, W, D]
     labels = labels.permute(0, 1, 3, 4, 2)  # [1, S, H, W, D]
-    
-    # Calculate tumor volumes per slice
+    # print("labels.shape ", labels.shape)
+
+    # Calculate tumor volumes per slice 
     n_sessions = labels.shape[1]
-    z_mask_size = calculate_tumor_volumes(labels[0, :, :, :, :])  # [D]
+    z_mask_size = calculate_tumor_volumes(labels[0])  # labels[0]: [S, H, W, D]
     
     # Get top-k slices with most tumor
     top_k_indices = get_slice_indices(z_mask_size, top_k=top_k)
     
     # Prepare images: [1, C*S, H, W, D] -> [1, S, C, H, W, D]
-    images = prepare_image_batch(images, n_sessions)
+    # images = prepare_image_batch(images, n_sessions)
     
     # Process each slice
     slice_metrics = []
@@ -319,7 +403,7 @@ def main():
     print(f"\nUsing device: {device}")
     
     print("\n" + "="*70)
-    print("TaDiff Training - Simple Approach (uses get_loss())")
+    print("TaDiff Training")
     print("="*70)
     print(f"Data directory: {config.data_dir[config.data_pool[0]]}")
     print(f"Max epochs: {config.max_epochs}")
@@ -344,14 +428,40 @@ def main():
     print(f"Valid files:")
     print(f"  Train: {len(train_files)} patients")
     print(f"  Val: {len(val_files)} patients\n")
+
+    wandb.init(
+    project="TaDiff",                    # change to your project
+    name=f"run_{config.data_pool[0]}",   # or a descriptive name
+    config={
+        "lr": config.lr,
+        "max_epochs": config.max_epochs,
+        "data_pool": config.data_pool[0],
+    }
+    )
     
-    # Create dataloaders (no caching - like test.py)
-    train_dataset = CacheDataset(data=train_files, transform=val_transforms, cache_rate=0.0)
-    val_dataset = CacheDataset(data=val_files, transform=val_transforms, cache_rate=0.0)
+    # # Create dataloaders (no caching - like test.py)
+    # train_dataset = CacheDataset(data=train_files, transform=val_transforms, cache_rate=0.0)
+    # val_dataset = CacheDataset(data=val_files, transform=val_transforms, cache_rate=0.0)
     
+    # train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
+    # val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0)
+    
+    # Create datasets with sliding windows
+    train_dataset = SlidingWindowDataset(train_files, transform=None)
+    val_dataset = SlidingWindowDataset(val_files, transform=None)
+
+    print(f"\n{'='*70}")
+    print("Sliding Window Statistics:")
+    print(f"{'='*70}")
+    print(f"Train patients: {len(train_files)} → Training points: {len(train_dataset)}")
+    print(f"Val patients: {len(val_files)} → Validation points: {len(val_dataset)}")
+    print(f"Avg windows per train patient: {len(train_dataset)/len(train_files):.1f}")
+    print(f"Avg windows per val patient: {len(val_dataset)/len(val_files):.1f}")
+    print(f"{'='*70}\n")
+
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0)
-    
+
     # Initialize model
     model = Tadiff_model(config).to(device)
     
@@ -387,11 +497,23 @@ def main():
         print(f"\nEpoch {epoch} [Train] - Loss: {train_metrics['loss']:.4f}, "
               f"MSE: {train_metrics['mse']:.4f}, Dice: {train_metrics['dice']:.4f}")
         
+        wandb.log({
+            "train/loss": train_metrics["loss"],
+            "train/mse": train_metrics["mse"],
+            "train/dice": train_metrics["dice"],
+            "epoch": epoch
+        })
+
         # Validate
         val_metrics = validate_epoch(model, val_loader, device, epoch)
         print(f"Epoch {epoch} [Val]   - Loss: {val_metrics['loss']:.4f}, "
               f"MSE: {val_metrics['mse']:.4f}, Dice: {val_metrics['dice']:.4f}\n")
-        
+
+        wandb.log({
+            "val/loss": val_metrics["loss"],
+            "val/mse": val_metrics["mse"],
+            "val/dice": val_metrics["dice"],
+        })
         # Save best model
         if val_metrics['dice'] > best_val_dice:
             best_val_dice = val_metrics['dice']
@@ -413,6 +535,8 @@ def main():
         
         # Step scheduler
         scheduler.step()
+        lr_now = scheduler.get_last_lr()[0]
+        wandb.log({"lr": lr_now})
         
         print(f"Learning rate: {scheduler.get_last_lr()[0]:.6f}")
         print("-" * 70)

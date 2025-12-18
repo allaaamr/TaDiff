@@ -4,7 +4,7 @@ from munch import DefaultMunch
 # -----------------------------------------------
 # model config 
 network = 'TaDiff_Net' 
-data_pool = ['lumiere']  # Changed from ['sailor', 'lumiere'] to just lumiere for your case
+data_pool = ['lumiere']  
 
 # Data directories for different datasets
 data_dir = {

@@ -4,13 +4,13 @@ from typing import List, Optional
 @dataclass
 class TestConfig:
     # Data paths
-    data_root: str = "./data/sailor"
-    save_path: str = './sailor_eval_17'
-    model_checkpoint: str = "./ckpt/tadiff_811.ckpt"
+    data_root: str = "/l/users/alaa.mohamed/datasets/lumiere_proc"
+    save_path: str = './results/lumiere/Patient-032'
+    model_checkpoint: str = "./ckpt/best_fixed.ckpt"
 
 
     # Patient IDs to test
-    patient_ids: List[str] = field(default_factory=lambda: ['sub-17'])
+    patient_ids: List[str] = field(default_factory=lambda: ['Patient-032'])
     
     # Model parameters
     model_channels: int = 32

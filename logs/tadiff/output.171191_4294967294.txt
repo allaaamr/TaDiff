@@ -1,0 +1,2 @@
+/home/alaa.mohamed/.conda/envs/wm/bin/python: can't open file '/home/alaa.mohamed/TaDiff/test.py': [Errno 2] No such file or directory
+srun: error: gpu-05: task 0: Exited with exit code 2

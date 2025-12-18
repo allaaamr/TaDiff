@@ -34,6 +34,7 @@ import pandas as pd
 from typing import Dict, List
 from pathlib import Path
 
+from config.cfg_tadiff_net import config as train_config
 from config.test_config import TestConfig
 from src.tadiff_model import Tadiff_model
 from src.net.diffusion import GaussianDiffusion
@@ -452,14 +453,15 @@ def load_data(test_files, config: TestConfig):
     test_dataset = CacheDataset(data=test_files, transform=val_transforms)
     return DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-def setup_model(config: TestConfig, device: str):
+def setup_model(config: TestConfig, train_config, device: str):
     """Initialize and load model"""
     model = Tadiff_model.load_from_checkpoint(
         config.model_checkpoint,
         model_channels=config.model_channels,
         num_heads=config.num_heads,
         num_res_blocks=config.num_res_blocks,
-        strict=False
+        strict=False,
+        config=train_config
     )
     model.to(device)
     model.eval()
@@ -528,7 +530,7 @@ def main():
         device = "cpu"
     
     # Initialize components
-    model = setup_model(config, device)
+    model = setup_model(config, train_config, device)
     metrics_calculator = MetricsCalculator(device, config.dice_thresholds)
     visualizer = Visualizer(config.colors)
     

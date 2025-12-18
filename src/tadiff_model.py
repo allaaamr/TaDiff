@@ -251,20 +251,18 @@ class Tadiff_model(LightningModule):
         imgs, label, days, treatments = batch["image"], batch["label"], batch["days"], batch["treatments"]
         n_sess = label.shape[1]
         
-        print("\n[DEBUG] get_loss() called")
-        print(f"  imgs.shape       = {tuple(imgs.shape)}  (ndim={imgs.ndim})")
-        print(f"  label.shape      = {tuple(label.shape)} (ndim={label.ndim})")
-        print(f"  days.shape       = {tuple(days.shape)}  (ndim={days.ndim})")
-        print(f"  treatments.shape = {tuple(treatments.shape)} (ndim={treatments.ndim})")
-        print(f"  imgs dtype       = {imgs.dtype}, device = {imgs.device}")
-        print(f"  label dtype      = {label.dtype}, device = {label.device}")
-        # optional: look at a few values
-        print(f"  days[0]          = {days[0]}")
-        print(f"  treatments[0]    = {treatments[0]}")
-        # force flush
+        # print("\n[DEBUG] get_loss() called")
+        # print(f"  imgs.shape       = {tuple(imgs.shape)}  (ndim={imgs.ndim})")
+        # print(f"  label.shape      = {tuple(label.shape)} (ndim={label.ndim})")
+        # print(f"  days.shape       = {tuple(days.shape)}  (ndim={days.ndim})")
+        # print(f"  treatments.shape = {tuple(treatments.shape)} (ndim={treatments.ndim})")
+        # print(f"  imgs dtype       = {imgs.dtype}, device = {imgs.device}")
+        # print(f"  label dtype      = {label.dtype}, device = {label.device}")
+        # # optional: look at a few values
+        # print(f"  days[0]          = {days[0]}")
+        # print(f"  treatments[0]    = {treatments[0]}")
         import sys
         sys.stdout.flush()
-        print(label)
         # imgs: 5-D tensor [B, S, C, H, W]
         #     B = batch size    S = number of sessions/timepoints   C = modalities (3: T1, T1c, FLAIR)
         # label: [B, S, 4, H, W] (4 label channels per session)
@@ -333,7 +331,7 @@ class Tadiff_model(LightningModule):
         out = self.forward(xt.to(torch.float32), t.to(torch.float32), 
                            intv_t=intvs, treat_code=treat_cond, 
                            i_tg=i_tg)
-        print(label)
+
         # Summary: Because the network is trained to:
             # see all sessions as conditioning input,
             # but only predict the diffusion noise & segmentation for one target session,
@@ -356,13 +354,11 @@ class Tadiff_model(LightningModule):
         loss_weigths = F.conv2d(loss_weigths, self.dilation_filters.to(loss_weigths.device), padding='same') + 1.
        
         img_pred, mask_pred = out[:, 4:7, :, :], out[:, 0:4, :, :]
-        
+        # print("img_pred ", img_pred.shape)
         loss1 = torch.mean(loss_weigths * (img_pred - epsilon)**2)
         mse = self.loss_function(img_pred, epsilon) # without weights on tumor
         
         dice_loss = self.dice(mask_pred, label) # all segementaed masks b, 4, 1, 1
-        print(dice_loss.shape)
-
     
         # dice_loss = dice_loss * w_tg.view(b, 1)  # weighted the loss one more time, w_tg ** 3 for target image, but for refence image only appply w_tg
         # weighted future tumor loss based on nosized level
@@ -546,11 +542,11 @@ class MyCallback(Callback):
         self.cfg = config
         
         # Debug: Print shapes to understand the data structure
-        print(f"\nMyCallback Debug - Input shapes:")
-        print(f"  image shape: {batch['image'].shape}")
-        print(f"  label shape: {batch['label'].shape}")
-        print(f"  days shape: {batch['days'].shape}")
-        print(f"  treatment shape: {batch['treatment'].shape}")
+        # print(f"\nMyCallback Debug - Input shapes:")
+        # print(f"  image shape: {batch['image'].shape}")
+        # print(f"  label shape: {batch['label'].shape}")
+        # print(f"  days shape: {batch['days'].shape}")
+        # print(f"  treatment shape: {batch['treatment'].shape}")
         
         # Get batch data
         images = batch['image']
@@ -569,7 +565,7 @@ class MyCallback(Callback):
         else:
             raise ValueError(f"Unexpected image shape: {images.shape}")
         
-        print(f"  Detected: {n_sessions} sessions with {c} modalities")
+        # print(f"  Detected: {n_sessions} sessions with {c} modalities")
         
         # Handle label shapes
         if labels.dim() == 5:
@@ -585,8 +581,8 @@ class MyCallback(Callback):
         labels_with_channel = labels.unsqueeze(2)
         img_label = torch.cat([images, labels_with_channel], dim=2)
         
-        print(f"\nMyCallback - After processing:")
-        print(f"  img_label shape: {img_label.shape}")
+        # print(f"\nMyCallback - After processing:")
+        # print(f"  img_label shape: {img_label.shape}")
         
         # Store processed data
         self.val_labels = img_label[:, :, -1, :, :, :]
@@ -613,12 +609,12 @@ class MyCallback(Callback):
         if treatments.dim() == 1:
             treatments = treatments.unsqueeze(0)
         
-        print(f"  days shape after expansion: {days.shape}")
-        print(f"  treatments shape after expansion: {treatments.shape}")
+        # print(f"  days shape after expansion: {days.shape}")
+        # print(f"  treatments shape after expansion: {treatments.shape}")
         
         # Get actual number of timepoints available
         n_timepoints = days.shape[1]
-        print(f"  Number of timepoints: {n_timepoints}")
+        # print(f"  Number of timepoints: {n_timepoints}")
         
         # Model expects 4 timepoints, so we need to pad/repeat if we have less
         if n_timepoints >= 4:
@@ -641,15 +637,15 @@ class MyCallback(Callback):
                 self.intvs.append(next_day)
                 self.treat_cond.append(last_treatment.clone())
         
-        print(f"  Final number of timepoints: {len(self.intvs)}")
-        print(f"  Days: {[d.item() if d.numel() == 1 else d[0].item() for d in self.intvs]}")
-        print(f"  Treatments: {[t.item() if t.numel() == 1 else t[0].item() for t in self.treat_cond]}")
+        # print(f"  Final number of timepoints: {len(self.intvs)}")
+        # print(f"  Days: {[d.item() if d.numel() == 1 else d[0].item() for d in self.intvs]}")
+        # print(f"  Treatments: {[t.item() if t.numel() == 1 else t[0].item() for t in self.treat_cond]}")
         
         # Create noise
         noise = torch.randn((self.img_for_noise.shape))
         self.val_imgs = torch.cat([self.img_cond, noise], dim=1)
         
-        print(f"  val_imgs shape: {self.val_imgs.shape}")
+        # print(f"  val_imgs shape: {self.val_imgs.shape}")
         
         # Initialize diffusion
         self.diffusion = GaussianDiffusion(
@@ -657,5 +653,5 @@ class MyCallback(Callback):
             schedule=self.cfg.ddpm_schedule
         )
         
-        print(f"MyCallback initialization complete!")    
+        # print(f"MyCallback initialization complete!")    
 # # trainer = Trainer(callbacks=[MyPrintingCallback()])

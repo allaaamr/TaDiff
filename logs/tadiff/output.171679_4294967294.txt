@@ -1,0 +1,87 @@
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torchmetrics/utilities/imports.py:22: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+wandb: Currently logged in as: allaaamr (allaaamr-mbzuai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run 7i6miw6f
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /home/alaa.mohamed/TaDiff/wandb/run-20251218_212638-7i6miw6f
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run run_lumiere
+wandb: ⭐️ View project at https://wandb.ai/allaaamr-mbzuai/TaDiff
+wandb: 🚀 View run at https://wandb.ai/allaaamr-mbzuai/TaDiff/runs/7i6miw6f
+
+Using device: cuda:0
+
+======================================================================
+TaDiff Training
+======================================================================
+Data directory: /l/users/alaa.mohamed/datasets/lumiere_proc
+Max epochs: 30
+Learning rate: 0.005
+======================================================================
+
+Loaded splits:
+  Train: 37 patients
+  Val: 8 patients
+
+Valid files:
+  Train: 37 patients
+  Val: 8 patients
+
+
+======================================================================
+Sliding Window Statistics:
+======================================================================
+Train patients: 37 → Training points: 232
+Val patients: 8 → Validation points: 38
+Avg windows per train patient: 6.3
+Avg windows per val patient: 4.8
+======================================================================
+
+
+Model initialized:
+  Total parameters: 5,504,119
+  Trainable: 5,504,119
+
+======================================================================
+Starting Training
+======================================================================
+
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+Epoch 0 [Train]:   0%|          | 0/232 [00:00<?, ?it/s]Epoch 0 [Train]:   0%|          | 0/232 [00:03<?, ?it/s, loss=1.5420, dice=0.0754]Epoch 0 [Train]:   0%|          | 1/232 [00:03<13:31,  3.51s/it, loss=1.5420, dice=0.0754]Epoch 0 [Train]:   0%|          | 1/232 [00:04<13:31,  3.51s/it, loss=1.3100, dice=0.1066]Epoch 0 [Train]:   1%|          | 2/232 [00:04<08:47,  2.29s/it, loss=1.3100, dice=0.1066]Epoch 0 [Train]:   1%|          | 2/232 [00:09<08:47,  2.29s/it, loss=1.1976, dice=0.2385]Epoch 0 [Train]:   1%|▏         | 3/232 [00:09<11:57,  3.13s/it, loss=1.1976, dice=0.2385]Epoch 0 [Train]:   1%|▏         | 3/232 [00:10<11:57,  3.13s/it, loss=1.0801, dice=0.0932]Epoch 0 [Train]:   2%|▏         | 4/232 [00:10<08:54,  2.35s/it, loss=1.0801, dice=0.0932]Epoch 0 [Train]:   2%|▏         | 4/232 [00:13<08:54,  2.35s/it, loss=0.8147, dice=0.1524]Epoch 0 [Train]:   2%|▏         | 5/232 [00:13<10:29,  2.77s/it, loss=0.8147, dice=0.1524]Epoch 0 [Train]:   2%|▏         | 5/232 [00:16<10:29img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+,  2.77s/it, loss=0.8869, dice=0.2723]Epoch 0 [Train]:   3%|▎         | 6/232 [00:16<10:43,  2.85s/it, loss=0.8869, dice=0.2723]Epoch 0 [Train]:   3%|▎         | 6/232 [00:19<10:43,  2.85s/it, loss=1.1167, dice=0.1672]Epoch 0 [Train]:   3%|▎         | 7/232 [00:19<10:48,  2.88s/it, loss=1.1167, dice=0.1672]Epoch 0 [Train]:   3%|▎         | 7/232 [00:23<10:48,  2.88s/it, loss=1.5504, dice=0.2411]Epoch 0 [Train]:   3%|▎         | 8/232 [00:23<11:51,  3.17s/it, loss=1.5504, dice=0.2411]Epoch 0 [Train]:   3%|▎         | 8/232 [00:25<11:51,  3.17s/it, loss=1.9020, dice=0.1744]Epoch 0 [Train]:   4%|▍         | 9/232 [00:25<10:38,  2.86s/it, loss=1.9020, dice=0.1744]Epoch 0 [Train]:   4%|▍         | 9/232 [00:28<10:38,  2.86s/it, loss=1.8710, dice=0.1563]Epoch 0 [Train]:   4%|▍         | 10/232 [00:28<10:33,  2.85s/it, loss=1.8710, dice=0.1563]Epoch 0 [Train]:   4%|▍         | 10/232 [00:32<10:33,  2.85s/it, loss=1.6673, dice=0.2544]Epoch 0 [Train]:   5%|▍         | 11/232 [00:32<11:img_win (4, 3, 256, 256, 176)
+images.shape  torch.Size([1, 4, 3, 256, 256, 176])
+labels.shape  torch.Size([1, 4, 256, 256, 176])
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd-gpu-01: error: *** JOB 171679 ON gpu-01 CANCELLED AT 2025-12-18T21:27:17 ***
+51,  3.22s/it, loss=1.6673, dice=0.2544]Epoch 0 [Train]:   5%|▍         | 11/232 [00:34<11:51,  3.22s/it, loss=1.8927, dice=0.1332]Epoch 0 [Train]:   5%|▌         | 12/232 [00:34<09:52,  2.69s/it, loss=1.8927, dice=0.1332]slurmstepd-gpu-01: error: *** STEP 171679.0 ON gpu-01 CANCELLED AT 2025-12-18T21:27:17 ***
