@@ -34,6 +34,13 @@ val_transforms = Compose([
         # ScaleIntensityd(keys=["label"], minv=0., maxv=1., ),  # to scale 0-255 to 0-1 in some case
     ])
 
+non_load_val_transforms = Compose([
+        CropForegroundd(keys=["image", "label"], source_key="image"),
+        CenterSpatialCropd(keys=["image", "label"], roi_size=[192, 192, 192]),
+        SpatialPadd(keys=["image", "label"], spatial_size=(192, 192, 192)),
+        MergeMultiLabels(keys=["label"]),
+        # ScaleIntensityd(keys=["label"], minv=0., maxv=1., ),  # to scale 0-255 to 0-1 in some case
+    ])
 class MergeMultiLabels(MapTransform):
     """Convert multi-class labels to binary labels.
     

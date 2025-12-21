@@ -26,7 +26,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config.cfg_tadiff_net import config as default_config
 from config.arg_parse import load_args
 from src.tadiff_model import Tadiff_model
-from src.data.data_loader import val_transforms, npz_keys
+from src.data.data_loader import val_transforms, non_load_val_transforms,  npz_keys
 from src.evaluation.metrics import calculate_tumor_volumes, get_slice_indices
 from src.utils.image_processing import prepare_image_batch
 
@@ -447,8 +447,8 @@ def main():
     # val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0)
     
     # Create datasets with sliding windows
-    train_dataset = SlidingWindowDataset(train_files, transform=None)
-    val_dataset = SlidingWindowDataset(val_files, transform=None)
+    train_dataset = SlidingWindowDataset(train_files, transform=non_load_val_transforms)
+    val_dataset = SlidingWindowDataset(val_files, transform=non_load_val_transforms)
 
     print(f"\n{'='*70}")
     print("Sliding Window Statistics:")

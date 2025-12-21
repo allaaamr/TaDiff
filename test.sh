@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=32          # Number of CPU cores
 #SBATCH --gres=gpu:1                # Number of GPUs (per node)
 #SBATCH -p cscc-gpu-p               # Use the gpu partition
-#SBATCH --time=0:03:00             # Specify the time needed for your experiment
+#SBATCH --time=1:00:00             # Specify the time needed for your experiment
 #SBATCH --qos=cscc-gpu-qos          # To enable the use of up to 8 GPUs
 
 source /apps/local/anaconda3/conda_init.sh

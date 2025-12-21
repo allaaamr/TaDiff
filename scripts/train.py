@@ -39,7 +39,7 @@ sys.path.append(str(Path(__file__).parent))
 from config.cfg_tadiff_net import config as default_config
 from config.arg_parse import load_args
 from src.tadiff_model import Tadiff_model
-from src.data.data_loader import val_transforms, npz_keys
+from src.data.data_loader import val_transforms,non_load_val_transforms,  npz_keys
 from src.evaluation.metrics import (
     # setup_metrics,
     # calculate_metrics,

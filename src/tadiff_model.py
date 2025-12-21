@@ -126,127 +126,6 @@ class Tadiff_model(LightningModule):
         # return optimizer
 
 
-    # def get_loss(self, batch, mode='train'):
-    #     imgs, label, days, treatments = batch["image"], batch["label"], batch["days"], batch["treatments"]
-    #     n_sess = label.shape[1]
-        
-    #     print("\n[DEBUG] get_loss() called")
-    #     print(f"  imgs.shape       = {tuple(imgs.shape)}  (ndim={imgs.ndim})")
-    #     print(f"  label.shape      = {tuple(label.shape)} (ndim={label.ndim})")
-    #     print(f"  days.shape       = {tuple(days.shape)}  (ndim={days.ndim})")
-    #     print(f"  treatments.shape = {tuple(treatments.shape)} (ndim={treatments.ndim})")
-    #     print(f"  imgs dtype       = {imgs.dtype}, device = {imgs.device}")
-    #     print(f"  label dtype      = {label.dtype}, device = {label.device}")
-    #     # optional: look at a few values
-    #     print(f"  days[0]          = {days[0]}")
-    #     print(f"  treatments[0]    = {treatments[0]}")
-    #     # force flush
-    #     import sys
-    #     sys.stdout.flush()
-        
-    #     # b, c, s, h, w = imgs.shape
-    #     b, s, c, h, w = imgs.shape
-    #     s1_days, s2_days, s3_days, t_days = days[:, 0], days[:,1], days[:, 2], days[:, 3]
-        
-    #     if mode == 'train' and np.random.random_sample() > 0.5: 
-    #         # i_tg = np.random.randint(s, size=b)
-    #         # is_repeat = s2_days == s1_days
-    #         # i_tg[is_repeat.detach().cpu().numpy()] = -1
-    #         i_tg = torch.randint(0, s, (b,), device=self.device)
-    #         # i_tg[(s2_days == s1_days) * (s3_days == s2_days)] = -1
-    #         i_tg[(s2_days != s1_days) * (s3_days == s2_days)] = -1 if np.random.random_sample() > 0.5 else 0
-    #         i_tg[(s2_days == s1_days) * (s3_days != s2_days)] = -1 if np.random.random_sample() > 0.5 else -2
-    #         # i_tg[s3_days == s2_days] = -1
-    #     else:
-    #         # i_tg = -np.ones(b, dtype=np.int8)
-    #         i_tg = -torch.ones((b,), dtype=torch.int8, device=self.device)
-
-        
-    #     treat1, treat2, treat3, treat_t = treatments[:,0], treatments[:,1], treatments[:,2], treatments[:,3]
-    #     # intvs = [s1_days.to(device), s2_days.to(device), t_days.to(device)]
-    #     # print(f'treat_cond: {treat_cond[0]}')
-    #     intvs = [s1_days.to(torch.float32), s2_days.to(torch.float32), 
-    #              s3_days.to(torch.float32), t_days.to(torch.float32)]
-    #     treat_cond = [treat1.to(torch.float32), treat2.to(torch.float32),  
-    #                   treat3.to(torch.float32), treat_t.to(torch.float32)]
-        
-    #     gt_img = torch.cat([imgs[[i], j, :, :, :] for i, j in zip(range(b), i_tg)], dim=0)
-    #     gt_label = torch.cat([label[[i], j, :, :] for i, j in zip(range(b), i_tg)], dim=0)
-    #     t = torch.randint(1, self.diffusion.T + 1, [gt_img.shape[0]]) # , device=self.device
-    #     w_tg = self.alphabar[t-1]
-        
-    #     xt, epsilon = self.diffusion.sample(gt_img.to(torch.float32), t)
-    #     # t = self.rng.draw(img.shape[0]) # draw t/timesteps from uniform distribution
-    #     # noised_x, target, t, weights = self.diffusion.sample(label.to(torch.float32), t)
-    #     # for i, j in zip(range(b), i_tg):
-    #     #     seq_imgs[i][:, j, :, :] = xt[i, :, :, :]  # nosie target image
-        
-    #     maskout_batch = (s3_days == t_days) 
-    #     for i, j in zip(range(b), i_tg):
-    #         if maskout_batch[i]:
-    #             imgs[i, :, :, :, :] = 0.
-    #             label[i, :, :, :] = 0
-    #         label[i, j, :, :] = gt_label[i, :, :]
-    #         imgs[i, j, :, :, :] = xt[i, :, :, :]  # nosie target image
-    #     # xt = torch.cat((seq_imgs), dim=0).transpose(1,2).reshape(b, s*c, h, w).contiguous() 
-    #     xt = imgs.reshape(b, s*c, h, w).contiguous() 
-    #     t = t.view(gt_img.shape[0]).to(self.device)
-        
-    #     # xt = torch.cat((cond_img, xt), dim=1)
-        
-    #     out = self.forward(xt.to(torch.float32), t.to(torch.float32), 
-    #                        intv_t=intvs, treat_code=treat_cond, 
-    #                        i_tg=i_tg)
-        
-    #     # Compute loss and backprop
-       
-    #     loss_weigths = torch.sum(label, dim=1, keepdim=True) # range 0 -4
-    #     loss_weigths = loss_weigths * torch.exp(-loss_weigths)
-    #     # loss_weigths = torch.clamp(F.conv2d(loss_weigths, self.dilation_filters.to(loss_weigths.device), padding='same'), 0, 1)
-    #     # loss_weigths = torch.clamp(F.conv2d(loss_weigths, self.dilation_filters.to(loss_weigths.device), padding='same'), min=0.886)
-    #     loss_weigths = F.conv2d(loss_weigths, self.dilation_filters.to(loss_weigths.device), padding='same') + 1.
-        
-    #     img_pred, mask_pred = out[:, 4:7, :, :], out[:, 0:4, :, :]
-        
-    #     loss1 = torch.mean(loss_weigths * (img_pred - epsilon)**2)
-    #     mse = self.loss_function(img_pred, epsilon) # without weights on tumor
-        
-    #     dice_loss = self.dice(mask_pred, label).squeeze() # all segementaed masks b, 4, 1, 1
-        
-    #     w_tg = torch.from_numpy(w_tg).to(self.device) # (b, )
-    #     # dice_loss = dice_loss * w_tg.view(b, 1)  # weighted the loss one more time, w_tg ** 3 for target image, but for refence image only appply w_tg
-    #     # weighted future tumor loss based on nosized level
-    #     for i, j in zip(range(b), i_tg):
-    #         # dice_loss[i, j] = dice_loss[i, j] * torch.sqrt(w_tg[i])
-    #         if maskout_batch[i]:
-    #             loss_ij = dice_loss[i, j] * torch.sqrt(w_tg[i])
-    #             dice_loss[i, :] = 0.
-    #             dice_loss[i, j] = loss_ij  # weight target image loss, w_tg ** 3
-    #         else:
-    #             dice_loss[i, j] = dice_loss[i, j] * torch.sqrt(w_tg[i]) # w_tg[i]**2  # weight target image loss, w_tg ** 3
-            
-    #     # w_dims = (b,) + tuple((1 for _ in dice_loss.shape[1:])) 
-    #     # dice_loss = dice_loss * w_tg.view(b, 1)  # weighted the loss one more time, w_tg ** 3 for target image, but for refence image only appply w_tg
-        
-    #     loss = loss1 + torch.mean(dice_loss) * self.cfg.aux_loss_w
-        
-    #     # mask_pred = F.sigmoid(mask_pred)
-    #     mask_pred = torch.sigmoid(mask_pred)
-    #     mask_pred = (mask_pred > 0.5) * 1  # fix threshold for segment mask 0.5
-    #     self.dice_metric(mask_pred, label)
-    #     dice_last =  self.dice_metric.aggregate() # only mean 4 mask dices
-    #     self.dice_metric.reset()
-    #     # if mode == 'train':
-    #     #     self.dice_metric(mask_pred, label)
-    #     #     dice_last =  self.dice_metric.aggregate() # only mean 4 mask dices
-    #     #     self.dice_metric.reset()
-    #     # else: 
-    #     #     self.dice_metric(mask_pred[:, 3:4,:, :], label[:, 3:4, :, :])
-    #     #     dice_last = self.dice_metric.aggregate()#.item() # only last masks 
-    #     #     self.dice_metric.reset()
-        
-    #     return loss, mse, dice_last
-
     def get_loss(self, batch, mode='train'):
         imgs, label, days, treatments = batch["image"], batch["label"], batch["days"], batch["treatments"]
         n_sess = label.shape[1]
@@ -261,6 +140,7 @@ class Tadiff_model(LightningModule):
         # # optional: look at a few values
         # print(f"  days[0]          = {days[0]}")
         # print(f"  treatments[0]    = {treatments[0]}")
+
         import sys
         sys.stdout.flush()
         # imgs: 5-D tensor [B, S, C, H, W]
@@ -394,14 +274,14 @@ class Tadiff_model(LightningModule):
         return loss, mse, dice_last
 
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         loss, mse, dice_seg = self.get_loss(batch, mode='train')
         self.log("train_loss", loss,  sync_dist=True, on_epoch=True, prog_bar=True) # on_epoch=False default
         self.log("train_mse", mse,  sync_dist=True, on_epoch=False, prog_bar=False) # on_epoch=False default
         self.log("train_dice", dice_seg,  sync_dist=True, on_epoch=False, prog_bar=False) # on_epoch=False default
         return {"loss": loss, "mse": mse, "dice_seg": dice_seg}
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch):
         loss, mse, dice = self.get_loss(batch, mode='val')
         self.val_step_outputs.append({"val_loss": loss})
         self.log("val_loss", loss.item(), sync_dist=True, prog_bar=False) # on_epoch=True default

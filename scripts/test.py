@@ -60,6 +60,90 @@ from src.utils.image_processing import (
     extract_slice
 )
 from monai.data import CacheDataset, DataLoader
+from torch.utils.data import Dataset
+
+
+npz_keys= ['image', 'label', 'days', 'treatment']
+
+class TestLoader(Dataset):
+    """
+    Dataset that implements the paper-style sampling across a patient's full timeline:
+      - Choose a target session among all sessions (biased to produce past/middle/future ratios)
+      - Choose k in {1,2,3} input sessions from remaining sessions WITH replacement
+      - Pad inputs to exactly 3 and put target last → [in1,in2,in3,target]
+      - Collapse session+modalities into channels, apply non_load_val_transforms (MONAI),
+        then reshape back to (S=4, C_use, H, W, D)
+    Returns a dict with tensors:
+      'image': (S=4, C, H, W, D)
+      'label': (S=4, H, W, D)
+      'days': (S=4,)
+      'treatment': (S=4,)
+      'sample_info': metadata for debugging (dict)
+    Args:
+      file_dicts: list of dicts with keys npz_keys (paths to .npy)
+      transform: non_load_val_transforms (val_transforms with LoadImaged removed)
+      samples_per_patient: how many samples to draw per patient per epoch (len = n_patients * samples_per_patient)
+      rng_seed: optional seed for reproducibility
+    """
+    def __init__(self, file_dicts: List[Dict], transform=None):
+        self.file_dicts = file_dicts[:]
+        self.transform = transform
+
+    def __len__(self):
+        return max(1, len(self.file_dicts)) 
+
+    def _choose_target_session(self, S_all: int) -> int:
+        """
+        Choose a target session index in 0..S_all-1 with bucketed probabilities.
+        We divide the session indices into 3 buckets (past/middle/future):
+           past = first ceil(S_all/3) indices
+           middle = next ceil(S_all/3)
+           future = remaining indices
+        We assign each bucket the total probability P_TARGET_BUCKET[*] and distribute uniformly
+        inside the bucket (i.e., per-session weight = bucket_prob / bucket_size).
+        This yields the overall mass near the requested bucket probs.
+        """
+
+
+    def __getitem__(self, patient_idx):
+        file_dict = self.file_dicts[patient_idx]
+
+        # Load arrays
+        data = {k: np.load(file_dict[k]) for k in npz_keys}
+        img_full = data['image']    # (C_times_S, D, H, W)
+        lbl_full = data['label']    # (S_all, D, H, W)
+        days_full = data['days']    # (S_all,)
+        treat_full = data['treatment']  # (S_all,)
+
+        # print("Patient : ", patient_idx)
+        # print("img_full : ", img_full.shape)
+        # print("lbl_full : ", lbl_full.shape)
+        # print("days_full : ", days_full.shape)
+        # print("treat_full : ", treat_full.shape)
+
+
+        S_all = int(lbl_full.shape[0])
+        C_times_S, D, H, W = img_full.shape
+        C_full = C_times_S // S_all
+        assert C_full * S_all == C_times_S, f"image channels ({C_times_S}) not divisible by sessions ({S_all})"
+
+        # Reshape images to (C_full, S_all, H, W, D)
+        img_full = img_full.reshape(C_full, S_all, H, W, D)
+        lbl_full = lbl_full.transpose(0,2,3,1)
+        # keep first 3 modalities (if T2 was removed in data creation)
+        img_full = img_full[:3, ...]   # (C_use, S_all, H, W, D)
+        print(img_full.shape)
+        print(lbl_full.shape)
+
+        # Sel
+
+        return {
+            'image': img_full,      # (4, C, H, W, D)
+            'label': lbl_full,      # (4, H, W, D)
+            'days': days_full,        # (4,)
+            'treatment': treat_full,  # (4,)
+        }
+
 
 def process_session(
     patient_id: str,
@@ -214,11 +298,13 @@ def process_slice(
     treatments = treatments.to(device)
     
     # Prepare data
-    b, cs, h, w, z = images.shape
+    print("T",images.shape)
+    b, c, s, h, w, z = images.shape
     # Reshape images to separate modalities and sessions
-    images = images.view(b, 4, -1, h, w, z)  # t1, t1c, flair, t2
+    # images = images.view(b, 4, -1, h, w, z)  # t1, t1c, flair, t2
     images = images.permute(0, 2, 1, 3, 4, 5)  # b, s, c, h, w, z
-    images = images[:, :, :-1, :, :, :]  # remove T2 modal, b, s, c-1, h, w, z
+    print("H",images.shape)
+    # images = images[:, :, :-1, :, :, :]  # remove T2 modal, b, s, c-1, h, w, z
     
     # Get target session indices
     session_indices = np.array([
@@ -231,7 +317,9 @@ def process_slice(
     session_indices = list(session_indices)
     
     # Extract relevant slices
+    print("label ", labels.shape)
     masks = labels[0, session_indices, :, :, :]
+    print("masks ", masks.shape)
     masks = masks[:, :, :, [slice_idx]*num_samples].permute(3, 0, 1, 2)
     seq_imgs = images[0, session_indices, :, :, :, :]
     seq_imgs = seq_imgs[:, :, :, :, [slice_idx]*num_samples].permute(4, 0, 1, 2, 3)
@@ -443,14 +531,14 @@ def get_test_files(config: TestConfig):
     for patient_id in config.patient_ids:
         file_dict = {
             key: os.path.join(config.data_root, f'{patient_id}_{key}.npy')
-            for key in config.npz_keys
+            for key in npz_keys
         }
         test_files.append(file_dict)
     return test_files
 
 def load_data(test_files, config: TestConfig):
     """Load and prepare test data"""
-    test_dataset = CacheDataset(data=test_files, transform=val_transforms)
+    test_dataset = TestLoader(file_dicts=test_files, transform=val_transforms)
     return DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 def setup_model(config: TestConfig, train_config, device: str):
@@ -476,9 +564,9 @@ def process_slice_old(model, data, slice_idx, config: TestConfig, device: str):
     treats = data['treatment'].to(device)
     
     # Reshape and prepare data
-    b, cs, h, w, z = imgs.shape
+    b, cs, z, h, w = imgs.shape
     imgs = imgs.view(b, 4, -1, h, w, z)
-    imgs = imgs.permute(0, 2, 1, 3, 4, 5)
+    # imgs = imgs.permute(0, 2, 1, 3, 4, 5)
     imgs = imgs[:, :, :-1, :, :, :]  # Remove T2 modal
     
     # Get target session indices
@@ -488,7 +576,9 @@ def process_slice_old(model, data, slice_idx, config: TestConfig, device: str):
     Sf = list(Sf)
     
     # Prepare model inputs
-    print(f'labels.shape: {labels.shape}, Sf: {Sf}, slice_idx: {slice_idx}')
+    print(f'labels.shape: {labels.shape}')
+    print(f'imgs.shape: {imgs.shape}, Sf: {Sf}, slice_idx: {slice_idx}')
+
     masks = labels[0, Sf, :, :, :]
     masks = masks[:, :, :, [slice_idx]*config.num_samples].permute(3, 0, 1, 2)
     seq_imgs = imgs[0, Sf, :, :, :, :]
@@ -552,10 +642,11 @@ def main():
     for i, batch in enumerate(dataloader):
         patient_id = config.patient_ids[i]
         print(f'Processing patient {patient_id}')
-        
         # Process each session
+        print("sessions ", batch['label'].shape[1])
         for session_idx in range(batch['label'].shape[1]):
             # Process each slice
+            print("slices ", batch['label'].shape[-1])
             for slice_idx in range(batch['label'].shape[-1]):
                 # Skip slices with small tumor size
                 if torch.sum(batch['label'][0, :, :, :, slice_idx]) < config.min_tumor_size:

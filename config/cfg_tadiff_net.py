@@ -27,15 +27,15 @@ ddpm_schedule = 'linear'  # 'linear', 'cosine', 'log'
 
 # -----------------------------------------------
 # optimizer, lr, loss, train config 
-opt = 'adamw'  # adam, adamw, sgd, adan
-lr = 5.e-3
+opt = 'adam'  # adam, adamw, sgd, adan
+lr = 2.5e-4
 max_epochs = 30  # total number of training epochs 
-max_steps = 600  # total number of training iterations
+max_steps = 900  # total number of training iterations
 log_every_n_steps = 50
 weight_decay = 3e-5
 lrdecay_cosine = True
 lr_gamma = 0.585  # 0.5, 0.575, 0.65, 0.585
-warmup_steps = 100
+warmup_steps = 1000
 loss_type = 'ssim'  # or mse
 aux_loss_w = 1.0  # NEW: weight for auxiliary segmentation loss
 batch_size = 1
@@ -43,9 +43,9 @@ sw_batch = 16  # total batch = sw_batch * batch_size
 num_workers = 8  # 4, 8, 16 up to 32 normally num of CPU cores
 grad_clip = 1.5
 accumulate_grad_batches = 4  # simulate larger batch size to save GPU mem
-n_repeat_tr = 10   # simulate larger train dataset by repeating it
-n_repeat_val = 5   # simulate larger val data by repeating 
-cache_rate = 0.0   # cache all data in memory (0.0 = no caching, 1.0 = full caching)
+n_repeat_tr = 1   # simulate larger train dataset by repeating it
+n_repeat_val = 1   # simulate larger val data by repeating 
+cache_rate = 1.0   # cache all data in memory (0.0 = no caching, 1.0 = full caching)
 check_val_every_n_epoch = 1
 # -----------------------------------------------
 # I/O, system and log config for trainer (e.g. lightning)
