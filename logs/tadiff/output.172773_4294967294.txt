@@ -1,0 +1,284 @@
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torchmetrics/utilities/imports.py:22: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/lightning_fabric/utilities/cloud_io.py:73: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+(3, 6, 256, 256, 176)
+(6, 256, 256, 176)
+Processing patient Patient-022
+sessions  6
+slices  176
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7863873, dtype=float32), 'mae': array(0.20950775, dtype=float32), 'psnr': array(28.524742, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 29670.0, 'vol_25': 29670, 'dice_50': array(0., dtype=float32), 'ravd_50': 23276.0, 'vol_50': 23276, 'dice_75': array(0., dtype=float32), 'ravd_75': 19765.0, 'vol_75': 19765}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7884754, dtype=float32), 'mae': array(0.19540693, dtype=float32), 'psnr': array(27.225574, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26248.0, 'vol_25': 26248, 'dice_50': array(0., dtype=float32), 'ravd_50': 20565.0, 'vol_50': 20565, 'dice_75': array(0., dtype=float32), 'ravd_75': 17847.0, 'vol_75': 17847}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.76576006, dtype=float32), 'mae': array(0.21796219, dtype=float32), 'psnr': array(28.690325, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26549.0, 'vol_25': 26549, 'dice_50': array(0., dtype=float32), 'ravd_50': 20700.0, 'vol_50': 20700, 'dice_75': array(0., dtype=float32), 'ravd_75': 17804.0, 'vol_75': 17804}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.69013757, dtype=float32), 'mae': array(0.3222444, dtype=float32), 'psnr': array(26.954884, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26544.0, 'vol_25': 26544, 'dice_50': array(0., dtype=float32), 'ravd_50': 20669.0, 'vol_50': 20669, 'dice_75': array(0., dtype=float32), 'ravd_75': 17742.0, 'vol_75': 17742}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7901723, dtype=float32), 'mae': array(0.18673654, dtype=float32), 'psnr': array(27.269978, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28711.0, 'vol_25': 28711, 'dice_50': array(0., dtype=float32), 'ravd_50': 22456.0, 'vol_50': 22456, 'dice_75': array(0., dtype=float32), 'ravd_75': 19625.0, 'vol_75': 19625}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.8506044, dtype=float32), 'mae': array(0.1920957, dtype=float32), 'psnr': array(28.61305, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 51 evaluation complete
+Saved scores for Patient-022_slice_051
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.759241, dtype=float32), 'mae': array(0.22867668, dtype=float32), 'psnr': array(29.328962, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27590.0, 'vol_25': 27590, 'dice_50': array(0., dtype=float32), 'ravd_50': 21166.0, 'vol_50': 21166, 'dice_75': array(0., dtype=float32), 'ravd_75': 18040.0, 'vol_75': 18040}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.761454, dtype=float32), 'mae': array(0.2405061, dtype=float32), 'psnr': array(27.866144, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27326.0, 'vol_25': 27326, 'dice_50': array(0., dtype=float32), 'ravd_50': 21427.0, 'vol_50': 21427, 'dice_75': array(0., dtype=float32), 'ravd_75': 18424.0, 'vol_75': 18424}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.79319453, dtype=float32), 'mae': array(0.1820874, dtype=float32), 'psnr': array(29.759264, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 30127.0, 'vol_25': 30127, 'dice_50': array(0., dtype=float32), 'ravd_50': 23989.0, 'vol_50': 23989, 'dice_75': array(0., dtype=float32), 'ravd_75': 20484.0, 'vol_75': 20484}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.6774421, dtype=float32), 'mae': array(0.31912565, dtype=float32), 'psnr': array(28.323994, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 25870.0, 'vol_25': 25870, 'dice_50': array(0., dtype=float32), 'ravd_50': 19938.0, 'vol_50': 19938, 'dice_75': array(0., dtype=float32), 'ravd_75': 17194.0, 'vol_75': 17194}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7412528, dtype=float32), 'mae': array(0.26164725, dtype=float32), 'psnr': array(28.31468, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27317.0, 'vol_25': 27317, 'dice_50': array(0., dtype=float32), 'ravd_50': 21160.0, 'vol_50': 21160, 'dice_75': array(0., dtype=float32), 'ravd_75': 18188.0, 'vol_75': 18188}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.8300931, dtype=float32), 'mae': array(0.22550575, dtype=float32), 'psnr': array(28.641186, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 52 evaluation complete
+Saved scores for Patient-022_slice_052
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7865658, dtype=float32), 'mae': array(0.20707059, dtype=float32), 'psnr': array(28.734745, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28016.0, 'vol_25': 28016, 'dice_50': array(0., dtype=float32), 'ravd_50': 22016.0, 'vol_50': 22016, 'dice_75': array(0., dtype=float32), 'ravd_75': 18916.0, 'vol_75': 18916}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+metrics: {'ssim': array(0.7811456, dtype=float32), 'mae': array(0.21700954, dtype=float32), 'psnr': array(27.644938, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27462.0, 'vol_25': 27462, 'dice_50': array(0., dtype=float32), 'ravd_50': 21017.0, 'vol_50': 21017, 'dice_75': array(0., dtype=float32), 'ravd_75': 18024.0, 'vol_75': 18024}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7819385, dtype=float32), 'mae': array(0.18736148, dtype=float32), 'psnr': array(29.585238, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28391.0, 'vol_25': 28391, 'dice_50': array(0., dtype=float32), 'ravd_50': 22649.0, 'vol_50': 22649, 'dice_75': array(0., dtype=float32), 'ravd_75': 19233.0, 'vol_75': 19233}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7655687, dtype=float32), 'mae': array(0.2278992, dtype=float32), 'psnr': array(28.828287, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28698.0, 'vol_25': 28698, 'dice_50': array(0., dtype=float32), 'ravd_50': 22657.0, 'vol_50': 22657, 'dice_75': array(0., dtype=float32), 'ravd_75': 19409.0, 'vol_75': 19409}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.780512, dtype=float32), 'mae': array(0.2358198, dtype=float32), 'psnr': array(27.2247, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27202.0, 'vol_25': 27202, 'dice_50': array(0., dtype=float32), 'ravd_50': 20779.0, 'vol_50': 20779, 'dice_75': array(0., dtype=float32), 'ravd_75': 17872.0, 'vol_75': 17872}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.8600553, dtype=float32), 'mae': array(0.17957975, dtype=float32), 'psnr': array(29.736103, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 53 evaluation complete
+Saved scores for Patient-022_slice_053
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.61971384, dtype=float32), 'mae': array(0.3515, dtype=float32), 'psnr': array(28.217392, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27248.0, 'vol_25': 27248, 'dice_50': array(0., dtype=float32), 'ravd_50': 21278.0, 'vol_50': 21278, 'dice_75': array(0., dtype=float32), 'ravd_75': 18499.0, 'vol_75': 18499}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.77841365, dtype=float32), 'mae': array(0.2247544, dtype=float32), 'psnr': array(27.519653, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28166.0, 'vol_25': 28166, 'dice_50': array(0., dtype=float32), 'ravd_50': 22057.0, 'vol_50': 22057, 'dice_75': array(0., dtype=float32), 'ravd_75': 19099.0, 'vol_75': 19099}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.76263726, dtype=float32), 'mae': array(0.22242497, dtype=float32), 'psnr': array(29.410007, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28276.0, 'vol_25': 28276, 'dice_50': array(0., dtype=float32), 'ravd_50': 21842.0, 'vol_50': 21842, 'dice_75': array(0., dtype=float32), 'ravd_75': 18875.0, 'vol_75': 18875}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.6207522, dtype=float32), 'mae': array(0.3408178, dtype=float32), 'psnr': array(29.21511, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26580.0, 'vol_25': 26580, 'dice_50': array(0., dtype=float32), 'ravd_50': 20361.0, 'vol_50': 20361, 'dice_75': array(0., dtype=float32), 'ravd_75': 17806.0, 'vol_75': 17806}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7962817, dtype=float32), 'mae': array(0.19172202, dtype=float32), 'psnr': array(28.266592, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28951.0, 'vol_25': 28951, 'dice_50': array(0., dtype=float32), 'ravd_50': 22714.0, 'vol_50': 22714, 'dice_75': array(0., dtype=float32), 'ravd_75': 19177.0, 'vol_75': 19177}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.809289, dtype=float32), 'mae': array(0.24046905, dtype=float32), 'psnr': array(29.085814, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 54 evaluation complete
+Saved scores for Patient-022_slice_054
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7851367, dtype=float32), 'mae': array(0.24409835, dtype=float32), 'psnr': array(27.856756, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28840.0, 'vol_25': 28840, 'dice_50': array(0., dtype=float32), 'ravd_50': 22708.0, 'vol_50': 22708, 'dice_75': array(0., dtype=float32), 'ravd_75': 19664.0, 'vol_75': 19664}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.78276366, dtype=float32), 'mae': array(0.21404262, dtype=float32), 'psnr': array(27.72199, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28388.0, 'vol_25': 28388, 'dice_50': array(0., dtype=float32), 'ravd_50': 22726.0, 'vol_50': 22726, 'dice_75': array(0., dtype=float32), 'ravd_75': 19659.0, 'vol_75': 19659}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.76229334, dtype=float32), 'mae': array(0.25961813, dtype=float32), 'psnr': array(28.881031, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 30240.0, 'vol_25': 30240, 'dice_50': array(0., dtype=float32), 'ravd_50': 23905.0, 'vol_50': 23905, 'dice_75': array(0., dtype=float32), 'ravd_75': 20627.0, 'vol_75': 20627}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+metrics: {'ssim': array(0.7542926, dtype=float32), 'mae': array(0.2597926, dtype=float32), 'psnr': array(27.680138, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 29158.0, 'vol_25': 29158, 'dice_50': array(0., dtype=float32), 'ravd_50': 23281.0, 'vol_50': 23281, 'dice_75': array(0., dtype=float32), 'ravd_75': 20198.0, 'vol_75': 20198}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.6971545, dtype=float32), 'mae': array(0.31790674, dtype=float32), 'psnr': array(28.151154, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26832.0, 'vol_25': 26832, 'dice_50': array(0., dtype=float32), 'ravd_50': 21055.0, 'vol_50': 21055, 'dice_75': array(0., dtype=float32), 'ravd_75': 18468.0, 'vol_75': 18468}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.8432988, dtype=float32), 'mae': array(0.22851652, dtype=float32), 'psnr': array(27.510887, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 55 evaluation complete
+Saved scores for Patient-022_slice_055
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7585425, dtype=float32), 'mae': array(0.24584508, dtype=float32), 'psnr': array(28.783873, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27860.0, 'vol_25': 27860, 'dice_50': array(0., dtype=float32), 'ravd_50': 22143.0, 'vol_50': 22143, 'dice_75': array(0., dtype=float32), 'ravd_75': 19382.0, 'vol_75': 19382}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7398077, dtype=float32), 'mae': array(0.26618397, dtype=float32), 'psnr': array(27.61634, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26258.0, 'vol_25': 26258, 'dice_50': array(0., dtype=float32), 'ravd_50': 21145.0, 'vol_50': 21145, 'dice_75': array(0., dtype=float32), 'ravd_75': 18594.0, 'vol_75': 18594}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.768332, dtype=float32), 'mae': array(0.22974892, dtype=float32), 'psnr': array(29.762177, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28180.0, 'vol_25': 28180, 'dice_50': array(0., dtype=float32), 'ravd_50': 22720.0, 'vol_50': 22720, 'dice_75': array(0., dtype=float32), 'ravd_75': 19822.0, 'vol_75': 19822}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7758171, dtype=float32), 'mae': array(0.20575333, dtype=float32), 'psnr': array(29.570473, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 29079.0, 'vol_25': 29079, 'dice_50': array(0., dtype=float32), 'ravd_50': 23488.0, 'vol_50': 23488, 'dice_75': array(0., dtype=float32), 'ravd_75': 20447.0, 'vol_75': 20447}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.75338507, dtype=float32), 'mae': array(0.2874777, dtype=float32), 'psnr': array(27.128159, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28639.0, 'vol_25': 28639, 'dice_50': array(0., dtype=float32), 'ravd_50': 23279.0, 'vol_50': 23279, 'dice_75': array(0., dtype=float32), 'ravd_75': 20296.0, 'vol_75': 20296}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.83811617, dtype=float32), 'mae': array(0.21102469, dtype=float32), 'psnr': array(31.015417, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 56 evaluation complete
+Saved scores for Patient-022_slice_056
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7894494, dtype=float32), 'mae': array(0.20124598, dtype=float32), 'psnr': array(27.915993, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28101.0, 'vol_25': 28101, 'dice_50': array(0., dtype=float32), 'ravd_50': 22084.0, 'vol_50': 22084, 'dice_75': array(0., dtype=float32), 'ravd_75': 19231.0, 'vol_75': 19231}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.76409817, dtype=float32), 'mae': array(0.2772952, dtype=float32), 'psnr': array(27.533817, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27882.0, 'vol_25': 27882, 'dice_50': array(0., dtype=float32), 'ravd_50': 21857.0, 'vol_50': 21857, 'dice_75': array(0., dtype=float32), 'ravd_75': 18829.0, 'vol_75': 18829}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7704185, dtype=float32), 'mae': array(0.21112426, dtype=float32), 'psnr': array(28.380245, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27144.0, 'vol_25': 27144, 'dice_50': array(0., dtype=float32), 'ravd_50': 21517.0, 'vol_50': 21517, 'dice_75': array(0., dtype=float32), 'ravd_75': 18798.0, 'vol_75': 18798}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7628263, dtype=float32), 'mae': array(0.25577393, dtype=float32), 'psnr': array(27.546732, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28164.0, 'vol_25': 28164, 'dice_50': array(0., dtype=float32), 'ravd_50': 22015.0, 'vol_50': 22015, 'dice_75': array(0., dtype=float32), 'ravd_75': 19003.0, 'vol_75': 19003}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.77917135, dtype=float32), 'mae': array(0.1896642, dtype=float32), 'psnr': array(29.214212, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28624.0, 'vol_25': 28624, 'dice_50': array(0., dtype=float32), 'ravd_50': 22521.0, 'vol_50': 22521, 'dice_75': array(0., dtype=float32), 'ravd_75': 19613.0, 'vol_75': 19613}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+metrics: {'ssim': array(0.85397524, dtype=float32), 'mae': array(0.22071882, dtype=float32), 'psnr': array(26.590935, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 57 evaluation complete
+Saved scores for Patient-022_slice_057
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7095925, dtype=float32), 'mae': array(0.2776557, dtype=float32), 'psnr': array(29.371933, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27556.0, 'vol_25': 27556, 'dice_50': array(0., dtype=float32), 'ravd_50': 21577.0, 'vol_50': 21577, 'dice_75': array(0., dtype=float32), 'ravd_75': 18895.0, 'vol_75': 18895}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.5871166, dtype=float32), 'mae': array(0.3883041, dtype=float32), 'psnr': array(27.805695, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26692.0, 'vol_25': 26692, 'dice_50': array(0., dtype=float32), 'ravd_50': 20868.0, 'vol_50': 20868, 'dice_75': array(0., dtype=float32), 'ravd_75': 17834.0, 'vol_75': 17834}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.77845705, dtype=float32), 'mae': array(0.18150032, dtype=float32), 'psnr': array(30.048409, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 28876.0, 'vol_25': 28876, 'dice_50': array(0., dtype=float32), 'ravd_50': 22532.0, 'vol_50': 22532, 'dice_75': array(0., dtype=float32), 'ravd_75': 19351.0, 'vol_75': 19351}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7912354, dtype=float32), 'mae': array(0.20769076, dtype=float32), 'psnr': array(28.444723, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27075.0, 'vol_25': 27075, 'dice_50': array(0., dtype=float32), 'ravd_50': 21300.0, 'vol_50': 21300, 'dice_75': array(0., dtype=float32), 'ravd_75': 18424.0, 'vol_75': 18424}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.77667207, dtype=float32), 'mae': array(0.20300479, dtype=float32), 'psnr': array(28.49101, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 29060.0, 'vol_25': 29060, 'dice_50': array(0., dtype=float32), 'ravd_50': 22999.0, 'vol_50': 22999, 'dice_75': array(0., dtype=float32), 'ravd_75': 20066.0, 'vol_75': 20066}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.81715715, dtype=float32), 'mae': array(0.23647974, dtype=float32), 'psnr': array(28.696898, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 58 evaluation complete
+Saved scores for Patient-022_slice_058
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.8094761, dtype=float32), 'mae': array(0.11997446, dtype=float32), 'psnr': array(30.093296, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 29899.0, 'vol_25': 29899, 'dice_50': array(0., dtype=float32), 'ravd_50': 23648.0, 'vol_50': 23648, 'dice_75': array(0., dtype=float32), 'ravd_75': 20483.0, 'vol_75': 20483}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.7678508, dtype=float32), 'mae': array(0.22041531, dtype=float32), 'psnr': array(27.486, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26600.0, 'vol_25': 26600, 'dice_50': array(0., dtype=float32), 'ravd_50': 21414.0, 'vol_50': 21414, 'dice_75': array(0., dtype=float32), 'ravd_75': 18673.0, 'vol_75': 18673}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.75221825, dtype=float32), 'mae': array(0.27086294, dtype=float32), 'psnr': array(28.032642, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 27766.0, 'vol_25': 27766, 'dice_50': array(0., dtype=float32), 'ravd_50': 21923.0, 'vol_50': 21923, 'dice_75': array(0., dtype=float32), 'ravd_75': 19154.0, 'vol_75': 19154}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.74194044, dtype=float32), 'mae': array(0.29551136, dtype=float32), 'psnr': array(27.766756, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26858.0, 'vol_25': 26858, 'dice_50': array(0., dtype=float32), 'ravd_50': 21411.0, 'vol_50': 21411, 'dice_75': array(0., dtype=float32), 'ravd_75': 18690.0, 'vol_75': 18690}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.75109833, dtype=float32), 'mae': array(0.23091292, dtype=float32), 'psnr': array(29.438017, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26751.0, 'vol_25': 26751, 'dice_50': array(0., dtype=float32), 'ravd_50': 21335.0, 'vol_50': 21335, 'dice_75': array(0., dtype=float32), 'ravd_75': 18481.0, 'vol_75': 18481}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.85288733, dtype=float32), 'mae': array(0.19412906, dtype=float32), 'psnr': array(27.824076, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 262144.0, 'vol_25': 262144, 'dice_50': array(0., dtype=float32), 'ravd_50': 262144.0, 'vol_50': 262144, 'dice_75': array(0., dtype=float32), 'ravd_75': 0.0, 'vol_75': 0}
+Session 0, Slice 59 evaluation complete
+Saved scores for Patient-022_slice_059
+T torch.Size([1, 3, 6, 256, 256, 176])
+H torch.Size([1, 6, 3, 256, 256, 176])
+label  torch.Size([1, 6, 256, 256, 176])
+masks  torch.Size([4, 256, 256, 176])
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+metrics: {'ssim': array(0.72790164, dtype=float32), 'mae': array(0.27524567, dtype=float32), 'psnr': array(29.18953, dtype=float32), 'dice_25': array(0., dtype=float32), 'ravd_25': 26781.0, 'vol_25': 26781, 'dice_50': array(0., dtype=float32), 'ravd_50': 20907.0, 'vol_50': 20907, 'dice_75': array(0., dtype=float32), 'ravd_75': 18085.0, 'vol_75': 18085}
+pred_img.shape: torch.Size([1, 3, 256, 256]), gt_img.shape: torch.Size([1, 3, 256, 256])
+pred_mask.shape: torch.Size([1, 4, 256, 256]), gt_mask.shape: torch.Size([1, 4, 256, 256])
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:104: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  at_tensor = torch.tensor(at, device=device)
+/home/alaa.mohamed/TaDiff/src/net/diffusion.py:105: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  beta_tilde_tensor = torch.tensor(beta_tilde, device=device)
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd-gpu-06: error: *** STEP 172773.0 ON gpu-06 CANCELLED AT 2025-12-22T15:22:06 ***
+slurmstepd-gpu-06: error: *** JOB 172773 ON gpu-06 CANCELLED AT 2025-12-22T15:22:06 ***

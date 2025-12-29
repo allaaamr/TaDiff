@@ -12,4 +12,4 @@
 
 source /apps/local/anaconda3/conda_init.sh
 conda activate wm    
-srun python -m scripts.test --patient_ids 32 --diffusion_steps 50 --num_samples 4
+srun python -m scripts.test

@@ -1,0 +1,7 @@
+Image: (24, 176, 256, 256)
+Label: (6, 176, 256, 256)
+Image range: [0.000, 1.000]
+Label values: [0 3]
+Detected 6 sessions and 4 modalities.
+Figure saved to: results/Patient-022_middle_slice_sessions_modalities.png
+Label figure saved to: results/Patient-022_label_middle_slice_sessions.png

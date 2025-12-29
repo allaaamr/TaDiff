@@ -183,75 +183,118 @@ import os
 # if __name__ == "__main__":
 #     main()
 
-img = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-032_image.npy')
-lbl = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-032_label.npy')
+img = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-022_image.npy')
+lbl = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-022_label.npy')
 
-# Check shapes
+# # Check shapes
 print(f"Image: {img.shape}")  # e.g., (24, 240, 240, 155) = 4 modalities × 6 sessions
 print(f"Label: {lbl.shape}")  # e.g., (6, 240, 240, 155) = 6 sessions
 
-# Check value ranges
+# # Check value ranges
 print(f"Image range: [{img.min():.3f}, {img.max():.3f}]")  # Should be [0, 1]
 print(f"Label values: {np.unique(lbl)}")  # Should be [0, 1, 3]
 
-# Check for NaN/Inf
-assert not np.isnan(img).any(), "NaN detected in images"
-assert not np.isinf(img).any(), "Inf detected in images"
+# # Check for NaN/Inf
+# assert not np.isnan(img).any(), "NaN detected in images"
+# assert not np.isinf(img).any(), "Inf detected in images"
 
-# ### Visualization
+### Visualization
 
-# # ------------------------------------------------------------------
-# # Create figure: rows = sessions, columns = modalities (middle slice)
-# # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# Create figure: rows = sessions, columns = modalities (middle slice)
+# ------------------------------------------------------------------
 
-# # Infer number of sessions (S) and modalities (C)
-# S = lbl.shape[0]                 # number of sessions
-# CS = img.shape[0]                # C * S
-# assert CS % S == 0, "Image first dim is not divisible by number of sessions"
-# C = CS // S                      # number of modalities (should be 4)
+# Infer number of sessions (S) and modalities (C)
+S = lbl.shape[0]                 # number of sessions
+CS = img.shape[0]                # C * S
+assert CS % S == 0, "Image first dim is not divisible by number of sessions"
+C = CS // S                      # number of modalities (should be 4)
 
-# print(f"Detected {S} sessions and {C} modalities.")
+print(f"Detected {S} sessions and {C} modalities.")
 
-# # Reshape image to (S, C, H, W, D)
-# H, W, D = img.shape[1:]
-# img_reshaped = img.reshape(C, S, H, W, D)  # (C, S, H, W, D)
-# img_reshaped = np.moveaxis(img_reshaped, 0, 1)  # -> (S, C, H, W, D)
+# Reshape image to (S, C, H, W, D)
+H, W, D = img.shape[1:]
+img_reshaped = img.reshape(C, S, H, W, D)  # (C, S, H, W, D)
+img_reshaped = np.moveaxis(img_reshaped, 0, 1)  # -> (S, C, H, W, D)
 
-# # Middle slice along the last axis (D)
-# mid_slice = D // 2
+# Middle slice along the last axis (D)
+mid_slice = D // 2
 
-# # Optional: names for modalities (if you know them; otherwise just use generic names)
-# modality_names = [f"Modality {i+1}" for i in range(C)]
+# Optional: names for modalities (if you know them; otherwise just use generic names)
+modality_names = [f"Modality {i+1}" for i in range(C)]
 
-# # Create figure
-# fig, axes = plt.subplots(
-#     nrows=S,
-#     ncols=C,
-#     figsize=(3 * C, 3 * S),
-#     squeeze=False
-# )
+# Create figure
+fig, axes = plt.subplots(
+    nrows=S,
+    ncols=C,
+    figsize=(3 * C, 3 * S),
+    squeeze=False
+)
 
-# for s in range(S):
-#     for c in range(C):
-#         ax = axes[s, c]
-#         slice2d = img_reshaped[s, c, :, :, mid_slice]
+for s in range(S):
+    for c in range(C):
+        ax = axes[s, c]
+        slice2d = img_reshaped[s, c, :, :, mid_slice]
 
-#         im = ax.imshow(slice2d, cmap='gray', vmin=0, vmax=1)
-#         ax.axis('off')
+        im = ax.imshow(slice2d, cmap='gray', vmin=0, vmax=1)
+        ax.axis('off')
 
-#         # Titles for the first row only
-#         if s == 0:
-#             ax.set_title(modality_names[c], fontsize=10)
+        # Titles for the first row only
+        if s == 0:
+            ax.set_title(modality_names[c], fontsize=10)
 
-#         # Label rows with session index on the leftmost column
-#         if c == 0:
-#             ax.set_ylabel(f"Session {s+1}", fontsize=10)
+        # Label rows with session index on the leftmost column
+        if c == 0:
+            ax.set_ylabel(f"Session {s+1}", fontsize=10)
 
-# plt.tight_layout()
+plt.tight_layout()
 
-# # Save the figure
-# out_path = "results/Patient-032_middle_slice_sessions_modalities.png"
-# plt.savefig(out_path, dpi=300, bbox_inches='tight')
-# plt.close(fig)
+# Save the figure
+out_path = "results/Patient-022_middle_slice_sessions_modalities.png"
+plt.savefig(out_path, dpi=300, bbox_inches='tight')
+plt.close(fig)
 
-# print(f"Figure saved to: {out_path}")
+print(f"Figure saved to: {out_path}")
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+# lbl shape: (S, H, W, D)
+# Recompute if needed:
+S, H, W, D = lbl.shape
+mid_slice = D // 2
+
+# Get unique label values and sort them (e.g. [0,1,3])
+label_vals = np.unique(lbl)
+# Prepare a colormap with enough distinct colors
+cmap = plt.get_cmap('tab10')  # tab10 gives up to 10 discrete colors
+
+# Create figure: rows = sessions, cols = 1
+fig, axes = plt.subplots(nrows=S, ncols=1, figsize=(4, 3 * S), squeeze=False)
+
+for s in range(S):
+    ax = axes[s, 0]
+    mask2d = lbl[s, :, :, mid_slice].astype(int)
+
+    # Display discrete mask
+    im = ax.imshow(mask2d, cmap=cmap, interpolation='nearest', vmin=label_vals.min(), vmax=label_vals.max())
+    ax.axis('off')
+    ax.set_ylabel(f"Session {s+1}", fontsize=10)
+
+# Build a legend showing label -> color mapping
+patches = []
+for i, val in enumerate(label_vals):
+    color = cmap(i % 10)  # wrap if >10 labels (unlikely)
+    label_name = f"{val}"  # replace with {0:'BG',1:'Tumor',3:'Other'} if you want names
+    patches.append(mpatches.Patch(color=color, label=label_name))
+
+# Place legend below the figure
+fig.legend(handles=patches, loc='lower center', ncol=len(patches), bbox_to_anchor=(0.5, -0.02))
+plt.tight_layout(rect=[0, 0.03, 1, 1])  # make room for the legend
+
+out_path = "results/Patient-022_label_middle_slice_sessions.png"
+plt.savefig(out_path, dpi=300, bbox_inches='tight')
+plt.close(fig)
+
+print(f"Label figure saved to: {out_path}")
