@@ -30,7 +30,7 @@ def load_args(cfg):
                         help="Directory for saving checkpoints and logs")
     parser.add_argument("--log_interval", type=int, default=cfg.log_interval,
                         help="Logging interval in steps")
-    
+    parser.add_argument("--split_dir", type=str, default=cfg.split_dir,)
     # ============================================
     # MODE
     # ============================================

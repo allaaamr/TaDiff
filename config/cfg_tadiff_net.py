@@ -4,14 +4,15 @@ from munch import DefaultMunch
 # -----------------------------------------------
 # model config 
 network = 'TaDiff_Net' 
-data_pool = ['lumiere']  
+data_pool = ['miu']  
 
 # Data directories for different datasets
 data_dir = {
     'sailor': '/home/brian/project/pl_ddpm/src/data/sailor_npy',
-    'lumiere': '/l/users/alaa.mohamed/datasets/lumiere_proc'
+    'lumiere': '/l/users/alaa.mohamed/datasets/lumiere_proc',
+    'miu': '/home/alaa.mohamed/TaDiff/data/miu'
 }
-
+split_dir = 'TaDiff/data/splits/miu/miu_splits.json'
 image_size = 192
 in_channels = 13 
 out_channels = 7

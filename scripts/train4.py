@@ -23,6 +23,7 @@ from monai.data import CacheDataset, DataLoader
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
 
+from src.sadm import SADM 
 from config.cfg_tadiff_net import config as default_config
 from config.arg_parse import load_args
 from src.tadiff_model import Tadiff_model
@@ -321,6 +322,7 @@ def get_patient_files(patient_ids: List[str], data_dir: Path) -> List[Dict]:
 
 def main():
     # Load config
+    print("WOHO")
     config = load_args(default_config)
     
     # Setup device
@@ -389,8 +391,21 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0)
 
-    # Initialize model
-    model = Tadiff_model(config).to(device)
+
+    # Create model
+    print("\n" + "="*70)
+    print("Creating SADM Model")
+    print("="*70)
+    
+    model = SADM(
+        img_size=config.image_size,
+        in_channels=config.in_channels,
+        out_channels=config.in_channels + 4,  # image + 4 seg classes
+        embed_dim=256,
+        model_channels=config.model_channels,
+        n_T=config.max_T,
+        device=str(device),
+    ).to(device)
     
     print(f"\nModel initialized:")
     print(f"  Total parameters: {sum(p.numel() for p in model.parameters()):,}")

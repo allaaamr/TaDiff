@@ -18,7 +18,7 @@ import argparse
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
-def get_patient_ids(csv_path: str = "data/lumiere.csv", patient_col: str = "patients") -> List[str]:
+def get_patient_ids(csv_path: str = "TaDiff/data/MUGlioma.csv", patient_col: str = "patients") -> List[str]:
     """
     Extract patient IDs from a CSV file instead of scanning the directory.
 
@@ -29,7 +29,7 @@ def get_patient_ids(csv_path: str = "data/lumiere.csv", patient_col: str = "pati
     Returns:
         List of unique patient IDs
     """
-    df = pd.read_csv("data/lumiere.csv")
+    df = pd.read_csv("TaDiff/data/MUGlioma.csv")
 
     # if patient_col not in df.columns:
     #     raise ValueError(f"Column '{patient_col}' not found in {csv_path}. "
@@ -192,18 +192,18 @@ def save_splits(
 
 def main():
     parser = argparse.ArgumentParser(description='Create train/val/test splits for TaDiff')
-    parser.add_argument('--data_dir', type=str, default="/l/users/alaa.mohamed/datasets/lumiere_proc",
+    parser.add_argument('--data_dir', type=str, default="TaDiff/data/miu",
                         help='Path to data directory')
-    parser.add_argument('--dataset_name', type=str, default='lumiere',
-                        help='Dataset name (sailor or lumiere)')
+    parser.add_argument('--dataset_name', type=str, default='miu',
+                        help='Dataset name (sailor or lumiere or miu)')
     parser.add_argument('--split_ratio', type=float, nargs=3, default=[0.7, 0.15, 0.15],
                         help='Train/val/test split ratios (must sum to 1.0)')
-    parser.add_argument('--output_dir', type=str, default='./data/splits',
+    parser.add_argument('--output_dir', type=str, default='TaDiff/data/splits/miu',
                         help='Output directory for split files')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for reproducibility')
     parser.add_argument('--required_keys', type=str, nargs='+',
-                        default=['image', 'label', 'days', 'treatment'],
+                        default=['image', 'label', 'days', 'treatment', 'geno'],
                         help='Required data files for each patient')
     
     args = parser.parse_args()
