@@ -1,0 +1,302 @@
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torchmetrics/utilities/imports.py:22: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+wandb: Currently logged in as: allaaamr (allaaamr-mbzuai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run dxvlifiu
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /home/alaa.mohamed/TaDiff/wandb/run-20260113_022727-dxvlifiu
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run run_miu
+wandb: ⭐️ View project at https://wandb.ai/allaaamr-mbzuai/TaDiff
+wandb: 🚀 View run at https://wandb.ai/allaaamr-mbzuai/TaDiff/runs/dxvlifiu
+
+Using device: cuda:0
+
+======================================================================
+TaDiff Training
+======================================================================
+Data directory: /home/alaa.mohamed/TaDiff/data/miu
+Max epochs: 30
+Learning rate: 0.00025
+======================================================================
+
+Loaded splits:
+  Train: 34 patients
+  Val: 7 patients
+
+Valid files:
+  Train: 34 patients
+  Val: 7 patients
+
+
+======================================================================
+Sliding Window Statistics:
+======================================================================
+Train patients: 34 → Training points: 510
+Val patients: 7 → Validation points: 70
+Avg windows per train patient: 15.0
+Avg windows per val patient: 10.0
+======================================================================
+
+HIII
+DEBUG all_time_day_dim = 128
+
+Model initialized:
+  Total parameters: 5,721,943
+  Trainable: 5,721,943
+
+======================================================================
+Starting Training
+======================================================================
+
+idx  374
+patient_idx  24
+img_full :  (6, 4, 240, 240, 155)
+idx  179
+patient_idx  11
+img_full :  (4, 4, 240, 240, 155)
+idx  162
+patient_idx  10
+img_full :  (5, 4, 240, 240, 155)
+idx  36
+patient_idx  2
+img_full :  (6, 4, 240, 240, 155)
+idx  158
+patient_idx  10
+img_full :  (5, 4, 240, 240, 155)
+idx  133
+patient_idx  8
+img_full :  (4, 4, 240, 240, 155)
+Epoch 0 [Train]:   0%|          | 0/510 [00:00<?, ?it/s]Epoch 0 [Train]:   0%|          | 0/510 [00:01<?, ?it/s, loss=1.0036, dice=0.3851]Epoch 0 [Train]:   0%|          | 1/510 [00:01<10:46,  1.27s/it, loss=1.0036, dice=0.3851]Epoch 0 [Train]:   0%|          | 1/510 [00:01<10:46,  1.27s/it, loss=1.0008, dice=0.2713]Epoch 0 [Train]:   0%|          | 2/510 [00:01<07:40,  1.10it/s, loss=1.0008, dice=0.2713]Epoch 0 [Train]:   0%|          | 2/510 [00:02<07:40,  1.10it/s, loss=1.0014, dice=0.2897]Epoch 0 [Train]:   1%|          | 3/510 [00:02<06:47,  1.24it/s, loss=1.0014, dice=0.2897]Epoch 0 [Train]:   1%|          | 3/510 [00:03<06:47,  1.24it/s, loss=0.9999, dice=0.3005]Epoch 0 [Train]:   1%|          | 4/510 [00:03<06:28,  1.30it/s, loss=0.9999, dice=0.3005]Epoch 0 [Train]:   1%|          | 4/510 [00:03<06:28,  1.30it/s, loss=1.0008, dice=0.3036]Epoch 0 [Train]:   1%|          | 5/510 [00:03<06:11,  1.36it/s, loss=1.0008, dice=0.3036]Epoch 0 [Train]:   1%|          | 5/510 [00:04<06:11,  1.36it/s,idx  27
+patient_idx  1
+img_full :  (5, 4, 240, 240, 155)
+idx  326
+patient_idx  21
+img_full :  (6, 4, 240, 240, 155)
+idx  58
+patient_idx  3
+img_full :  (5, 4, 240, 240, 155)
+idx  356
+patient_idx  23
+img_full :  (6, 4, 240, 240, 155)
+idx  428
+patient_idx  28
+img_full :  (6, 4, 240, 240, 155)
+ loss=0.9998, dice=0.4691]Epoch 0 [Train]:   1%|          | 6/510 [00:04<05:57,  1.41it/s, loss=0.9998, dice=0.4691]Epoch 0 [Train]:   1%|          | 6/510 [00:05<05:57,  1.41it/s, loss=0.9994, dice=0.5201]Epoch 0 [Train]:   1%|▏         | 7/510 [00:05<05:52,  1.43it/s, loss=0.9994, dice=0.5201]Epoch 0 [Train]:   1%|▏         | 7/510 [00:06<05:52,  1.43it/s, loss=0.9972, dice=0.2027]Epoch 0 [Train]:   2%|▏         | 8/510 [00:06<05:52,  1.42it/s, loss=0.9972, dice=0.2027]Epoch 0 [Train]:   2%|▏         | 8/510 [00:06<05:52,  1.42it/s, loss=1.0006, dice=0.7502]Epoch 0 [Train]:   2%|▏         | 9/510 [00:06<05:49,  1.43it/s, loss=1.0006, dice=0.7502]Epoch 0 [Train]:   2%|▏         | 9/510 [00:07<05:49,  1.43it/s, loss=1.0018, dice=0.6477]Epoch 0 [Train]:   2%|▏         | 10/510 [00:07<05:49,  1.43it/s, loss=1.0018, dice=0.6477]Epoch 0 [Train]:   2%|▏         | 10/510 [00:08<05:49,  1.43it/s, loss=0.9983, dice=0.4987]Epoch 0 [Train]:   2%|▏         | 11/510 [00:08<05:49,  1.43it/s, lidx  194
+patient_idx  12
+img_full :  (5, 4, 240, 240, 155)
+idx  143
+patient_idx  9
+img_full :  (6, 4, 240, 240, 155)
+idx  278
+patient_idx  18
+img_full :  (4, 4, 240, 240, 155)
+idx  104
+patient_idx  6
+img_full :  (5, 4, 240, 240, 155)
+idx  106
+patient_idx  7
+img_full :  (6, 4, 240, 240, 155)
+idx  388
+patient_idx  25
+img_full :  (6, 4, 240, 240, 155)
+oss=0.9983, dice=0.4987]Epoch 0 [Train]:   2%|▏         | 11/510 [00:08<05:49,  1.43it/s, loss=0.9999, dice=0.5397]Epoch 0 [Train]:   2%|▏         | 12/510 [00:08<05:50,  1.42it/s, loss=0.9999, dice=0.5397]Epoch 0 [Train]:   2%|▏         | 12/510 [00:09<05:50,  1.42it/s, loss=0.9992, dice=0.6039]Epoch 0 [Train]:   3%|▎         | 13/510 [00:09<05:49,  1.42it/s, loss=0.9992, dice=0.6039]Epoch 0 [Train]:   3%|▎         | 13/510 [00:10<05:49,  1.42it/s, loss=0.9991, dice=0.0997]Epoch 0 [Train]:   3%|▎         | 14/510 [00:10<05:41,  1.45it/s, loss=0.9991, dice=0.0997]Epoch 0 [Train]:   3%|▎         | 14/510 [00:10<05:41,  1.45it/s, loss=0.9978, dice=0.4545]Epoch 0 [Train]:   3%|▎         | 15/510 [00:10<05:39,  1.46it/s, loss=0.9978, dice=0.4545]Epoch 0 [Train]:   3%|▎         | 15/510 [00:11<05:39,  1.46it/s, loss=0.9985, dice=0.6504]Epoch 0 [Train]:   3%|▎         | 16/510 [00:11<05:41,  1.45it/s, loss=0.9985, dice=0.6504]Epoch 0 [Train]:   3%|▎         | 16/510 [00:12<05:41,  1idx  399
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+idx  480
+patient_idx  32
+img_full :  (6, 4, 240, 240, 155)
+idx  30
+patient_idx  2
+img_full :  (6, 4, 240, 240, 155)
+idx  170
+patient_idx  11
+img_full :  (4, 4, 240, 240, 155)
+idx  404
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+.45it/s, loss=0.9966, dice=0.2625]Epoch 0 [Train]:   3%|▎         | 17/510 [00:12<05:42,  1.44it/s, loss=0.9966, dice=0.2625]Epoch 0 [Train]:   3%|▎         | 17/510 [00:12<05:42,  1.44it/s, loss=0.9973, dice=0.4412]Epoch 0 [Train]:   4%|▎         | 18/510 [00:12<05:40,  1.45it/s, loss=0.9973, dice=0.4412]Epoch 0 [Train]:   4%|▎         | 18/510 [00:13<05:40,  1.45it/s, loss=1.0020, dice=0.2863]Epoch 0 [Train]:   4%|▎         | 19/510 [00:13<05:42,  1.43it/s, loss=1.0020, dice=0.2863]Epoch 0 [Train]:   4%|▎         | 19/510 [00:14<05:42,  1.43it/s, loss=1.0001, dice=0.2373]Epoch 0 [Train]:   4%|▍         | 20/510 [00:14<05:43,  1.43it/s, loss=1.0001, dice=0.2373]Epoch 0 [Train]:   4%|▍         | 20/510 [00:15<05:43,  1.43it/s, loss=1.0026, dice=0.2857]Epoch 0 [Train]:   4%|▍         | 21/510 [00:15<05:35,  1.46it/s, loss=1.0026, dice=0.2857]Epoch 0 [Train]:   4%|▍         | 21/510 [00:15<05:35,  1.46it/s, loss=1.0080, dice=0.2978]Epoch 0 [Train]:   4%|▍         | 22/510 [00:15idx  250
+patient_idx  16
+img_full :  (4, 4, 240, 240, 155)
+idx  397
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+idx  271
+patient_idx  18
+img_full :  (4, 4, 240, 240, 155)
+idx  293
+patient_idx  19
+img_full :  (6, 4, 240, 240, 155)
+idx  212
+patient_idx  14
+img_full :  (5, 4, 240, 240, 155)
+idx  180
+patient_idx  12
+img_full :  (5, 4, 240, 240, 155)
+<05:33,  1.46it/s, loss=1.0080, dice=0.2978]Epoch 0 [Train]:   4%|▍         | 22/510 [00:16<05:33,  1.46it/s, loss=1.0006, dice=0.5564]Epoch 0 [Train]:   5%|▍         | 23/510 [00:16<05:27,  1.49it/s, loss=1.0006, dice=0.5564]Epoch 0 [Train]:   5%|▍         | 23/510 [00:17<05:27,  1.49it/s, loss=1.0003, dice=0.3599]Epoch 0 [Train]:   5%|▍         | 24/510 [00:17<05:28,  1.48it/s, loss=1.0003, dice=0.3599]Epoch 0 [Train]:   5%|▍         | 24/510 [00:17<05:28,  1.48it/s, loss=0.9984, dice=0.1333]Epoch 0 [Train]:   5%|▍         | 25/510 [00:17<05:23,  1.50it/s, loss=0.9984, dice=0.1333]Epoch 0 [Train]:   5%|▍         | 25/510 [00:18<05:23,  1.50it/s, loss=1.0013, dice=0.7425]Epoch 0 [Train]:   5%|▌         | 26/510 [00:18<05:29,  1.47it/s, loss=1.0013, dice=0.7425]Epoch 0 [Train]:   5%|▌         | 26/510 [00:19<05:29,  1.47it/s, loss=0.9968, dice=0.4241]Epoch 0 [Train]:   5%|▌         | 27/510 [00:19<05:29,  1.47it/s, loss=0.9968, dice=0.4241]Epoch 0 [Train]:   5%|▌         | 27/idx  38
+patient_idx  2
+img_full :  (6, 4, 240, 240, 155)
+idx  503
+patient_idx  33
+img_full :  (6, 4, 240, 240, 155)
+idx  380
+patient_idx  25
+img_full :  (6, 4, 240, 240, 155)
+idx  237
+patient_idx  15
+img_full :  (5, 4, 240, 240, 155)
+idx  344
+patient_idx  22
+img_full :  (5, 4, 240, 240, 155)
+510 [00:19<05:29,  1.47it/s, loss=0.9978, dice=0.5915]Epoch 0 [Train]:   5%|▌         | 28/510 [00:19<05:32,  1.45it/s, loss=0.9978, dice=0.5915]Epoch 0 [Train]:   5%|▌         | 28/510 [00:20<05:32,  1.45it/s, loss=0.9973, dice=0.2410]Epoch 0 [Train]:   6%|▌         | 29/510 [00:20<05:34,  1.44it/s, loss=0.9973, dice=0.2410]Epoch 0 [Train]:   6%|▌         | 29/510 [00:21<05:34,  1.44it/s, loss=0.9980, dice=0.7387]Epoch 0 [Train]:   6%|▌         | 30/510 [00:21<05:35,  1.43it/s, loss=0.9980, dice=0.7387]Epoch 0 [Train]:   6%|▌         | 30/510 [00:21<05:35,  1.43it/s, loss=0.9985, dice=0.2234]Epoch 0 [Train]:   6%|▌         | 31/510 [00:21<05:37,  1.42it/s, loss=0.9985, dice=0.2234]Epoch 0 [Train]:   6%|▌         | 31/510 [00:22<05:37,  1.42it/s, loss=1.0028, dice=0.1728]Epoch 0 [Train]:   6%|▋         | 32/510 [00:22<05:34,  1.43it/s, loss=1.0028, dice=0.1728]Epoch 0 [Train]:   6%|▋         | 32/510 [00:23<05:34,  1.43it/s, loss=1.0002, dice=0.8052]Epoch 0 [Train]:   6%|▋    idx  196
+patient_idx  13
+img_full :  (5, 4, 240, 240, 155)
+idx  159
+patient_idx  10
+img_full :  (5, 4, 240, 240, 155)
+idx  43
+patient_idx  2
+img_full :  (6, 4, 240, 240, 155)
+idx  392
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+idx  114
+patient_idx  7
+img_full :  (6, 4, 240, 240, 155)
+idx  68
+patient_idx  4
+img_full :  (5, 4, 240, 240, 155)
+     | 33/510 [00:23<05:31,  1.44it/s, loss=1.0002, dice=0.8052]Epoch 0 [Train]:   6%|▋         | 33/510 [00:23<05:31,  1.44it/s, loss=1.0068, dice=0.6797]Epoch 0 [Train]:   7%|▋         | 34/510 [00:23<05:26,  1.46it/s, loss=1.0068, dice=0.6797]Epoch 0 [Train]:   7%|▋         | 34/510 [00:24<05:26,  1.46it/s, loss=0.9988, dice=0.2862]Epoch 0 [Train]:   7%|▋         | 35/510 [00:24<05:24,  1.46it/s, loss=0.9988, dice=0.2862]Epoch 0 [Train]:   7%|▋         | 35/510 [00:25<05:24,  1.46it/s, loss=0.9985, dice=0.3020]Epoch 0 [Train]:   7%|▋         | 36/510 [00:25<05:27,  1.45it/s, loss=0.9985, dice=0.3020]Epoch 0 [Train]:   7%|▋         | 36/510 [00:26<05:27,  1.45it/s, loss=0.9984, dice=0.3014]Epoch 0 [Train]:   7%|▋         | 37/510 [00:26<05:25,  1.45it/s, loss=0.9984, dice=0.3014]Epoch 0 [Train]:   7%|▋         | 37/510 [00:26<05:25,  1.45it/s, loss=1.0006, dice=0.6991]Epoch 0 [Train]:   7%|▋         | 38/510 [00:26<05:28,  1.44it/s, loss=1.0006, dice=0.6991]Epoch 0 [Train]:   idx  472
+patient_idx  31
+img_full :  (6, 4, 240, 240, 155)
+idx  389
+patient_idx  25
+img_full :  (6, 4, 240, 240, 155)
+idx  95
+patient_idx  6
+img_full :  (5, 4, 240, 240, 155)
+idx  74
+patient_idx  4
+img_full :  (5, 4, 240, 240, 155)
+idx  350
+patient_idx  23
+img_full :  (6, 4, 240, 240, 155)
+7%|▋         | 38/510 [00:27<05:28,  1.44it/s, loss=0.9987, dice=0.3614]Epoch 0 [Train]:   8%|▊         | 39/510 [00:27<05:26,  1.44it/s, loss=0.9987, dice=0.3614]Epoch 0 [Train]:   8%|▊         | 39/510 [00:28<05:26,  1.44it/s, loss=0.9997, dice=0.3792]Epoch 0 [Train]:   8%|▊         | 40/510 [00:28<05:29,  1.43it/s, loss=0.9997, dice=0.3792]Epoch 0 [Train]:   8%|▊         | 40/510 [00:28<05:29,  1.43it/s, loss=0.9987, dice=0.4710]Epoch 0 [Train]:   8%|▊         | 41/510 [00:28<05:29,  1.43it/s, loss=0.9987, dice=0.4710]Epoch 0 [Train]:   8%|▊         | 41/510 [00:29<05:29,  1.43it/s, loss=1.0024, dice=0.3731]Epoch 0 [Train]:   8%|▊         | 42/510 [00:29<05:24,  1.44it/s, loss=1.0024, dice=0.3731]Epoch 0 [Train]:   8%|▊         | 42/510 [00:30<05:24,  1.44it/s, loss=1.0020, dice=0.3504]Epoch 0 [Train]:   8%|▊         | 43/510 [00:30<05:22,  1.45it/s, loss=1.0020, dice=0.3504]Epoch 0 [Train]:   8%|▊         | 43/510 [00:30<05:22,  1.45it/s, loss=0.9978, dice=0.6984]Epoch 0 [idx  319
+patient_idx  21
+img_full :  (6, 4, 240, 240, 155)
+idx  248
+patient_idx  16
+img_full :  (4, 4, 240, 240, 155)
+idx  281
+patient_idx  18
+img_full :  (4, 4, 240, 240, 155)
+idx  398
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+idx  336
+patient_idx  22
+img_full :  (5, 4, 240, 240, 155)
+Train]:   9%|▊         | 44/510 [00:30<05:23,  1.44it/s, loss=0.9978, dice=0.6984]Epoch 0 [Train]:   9%|▊         | 44/510 [00:31<05:23,  1.44it/s, loss=1.0021, dice=0.2362]Epoch 0 [Train]:   9%|▉         | 45/510 [00:31<05:25,  1.43it/s, loss=1.0021, dice=0.2362]Epoch 0 [Train]:   9%|▉         | 45/510 [00:32<05:25,  1.43it/s, loss=0.9996, dice=0.5834]Epoch 0 [Train]:   9%|▉         | 46/510 [00:32<05:18,  1.46it/s, loss=0.9996, dice=0.5834]Epoch 0 [Train]:   9%|▉         | 46/510 [00:32<05:18,  1.46it/s, loss=1.0015, dice=0.1934]Epoch 0 [Train]:   9%|▉         | 47/510 [00:32<05:12,  1.48it/s, loss=1.0015, dice=0.1934]Epoch 0 [Train]:   9%|▉         | 47/510 [00:33<05:12,  1.48it/s, loss=0.9981, dice=0.3945]Epoch 0 [Train]:   9%|▉         | 48/510 [00:33<05:12,  1.48it/s, loss=0.9981, dice=0.3945]Epoch 0 [Train]:   9%|▉         | 48/510 [00:34<05:12,  1.48it/s, loss=0.9991, dice=0.7814]Epoch 0 [Train]:  10%|▉         | 49/510 [00:34<05:12,  1.48it/s, loss=0.9991, dice=0.7814]idx  275
+patient_idx  18
+img_full :  (4, 4, 240, 240, 155)
+idx  197
+patient_idx  13
+img_full :  (5, 4, 240, 240, 155)
+idx  204
+patient_idx  13
+img_full :  (5, 4, 240, 240, 155)
+idx  338
+patient_idx  22
+img_full :  (5, 4, 240, 240, 155)
+idx  434
+patient_idx  28
+img_full :  (6, 4, 240, 240, 155)
+idx  108
+patient_idx  7
+img_full :  (6, 4, 240, 240, 155)
+Epoch 0 [Train]:  10%|▉         | 49/510 [00:34<05:12,  1.48it/s, loss=0.9999, dice=0.1971]Epoch 0 [Train]:  10%|▉         | 50/510 [00:34<05:08,  1.49it/s, loss=0.9999, dice=0.1971]Epoch 0 [Train]:  10%|▉         | 50/510 [00:35<05:08,  1.49it/s, loss=0.9961, dice=0.4859]Epoch 0 [Train]:  10%|█         | 51/510 [00:35<05:06,  1.50it/s, loss=0.9961, dice=0.4859]Epoch 0 [Train]:  10%|█         | 51/510 [00:36<05:06,  1.50it/s, loss=0.9959, dice=0.6599]Epoch 0 [Train]:  10%|█         | 52/510 [00:36<05:05,  1.50it/s, loss=0.9959, dice=0.6599]Epoch 0 [Train]:  10%|█         | 52/510 [00:36<05:05,  1.50it/s, loss=0.9987, dice=0.8220]Epoch 0 [Train]:  10%|█         | 53/510 [00:36<05:05,  1.49it/s, loss=0.9987, dice=0.8220]Epoch 0 [Train]:  10%|█         | 53/510 [00:37<05:05,  1.49it/s, loss=1.0009, dice=0.4632]Epoch 0 [Train]:  11%|█         | 54/510 [00:37<05:10,  1.47it/s, loss=1.0009, dice=0.4632]Epoch 0 [Train]:  11%|█         | 54/510 [00:38<05:10,  1.47it/s, loss=0.9982, diidx  13
+patient_idx  0
+img_full :  (4, 4, 240, 240, 155)
+idx  298
+patient_idx  19
+img_full :  (6, 4, 240, 240, 155)
+idx  48
+patient_idx  3
+img_full :  (5, 4, 240, 240, 155)
+idx  459
+patient_idx  30
+img_full :  (4, 4, 240, 240, 155)
+idx  105
+patient_idx  7
+img_full :  (6, 4, 240, 240, 155)
+ce=0.6918]Epoch 0 [Train]:  11%|█         | 55/510 [00:38<05:12,  1.46it/s, loss=0.9982, dice=0.6918]Epoch 0 [Train]:  11%|█         | 55/510 [00:39<05:12,  1.46it/s, loss=0.9964, dice=0.6199]Epoch 0 [Train]:  11%|█         | 56/510 [00:39<05:08,  1.47it/s, loss=0.9964, dice=0.6199]Epoch 0 [Train]:  11%|█         | 56/510 [00:39<05:08,  1.47it/s, loss=1.0016, dice=0.7563]Epoch 0 [Train]:  11%|█         | 57/510 [00:39<05:12,  1.45it/s, loss=1.0016, dice=0.7563]Epoch 0 [Train]:  11%|█         | 57/510 [00:40<05:12,  1.45it/s, loss=1.0028, dice=0.6231]Epoch 0 [Train]:  11%|█▏        | 58/510 [00:40<05:10,  1.46it/s, loss=1.0028, dice=0.6231]Epoch 0 [Train]:  11%|█▏        | 58/510 [00:41<05:10,  1.46it/s, loss=1.0020, dice=0.3966]Epoch 0 [Train]:  12%|█▏        | 59/510 [00:41<05:04,  1.48it/s, loss=1.0020, dice=0.3966]Epoch 0 [Train]:  12%|█▏        | 59/510 [00:41<05:04,  1.48it/s, loss=0.9983, dice=0.6220]Epoch 0 [Train]:  12%|█▏        | 60/510 [00:41<05:07,  1.46iidx  193
+patient_idx  12
+img_full :  (5, 4, 240, 240, 155)
+idx  85
+patient_idx  5
+img_full :  (6, 4, 240, 240, 155)
+idx  493
+patient_idx  32
+img_full :  (6, 4, 240, 240, 155)
+idx  421
+patient_idx  28
+img_full :  (6, 4, 240, 240, 155)
+idx  188
+patient_idx  12
+img_full :  (5, 4, 240, 240, 155)
+idx  211
+patient_idx  14
+img_full :  (5, 4, 240, 240, 155)
+t/s, loss=0.9983, dice=0.6220]Epoch 0 [Train]:  12%|█▏        | 60/510 [00:42<05:07,  1.46it/s, loss=0.9964, dice=0.6623]Epoch 0 [Train]:  12%|█▏        | 61/510 [00:42<05:10,  1.45it/s, loss=0.9964, dice=0.6623]Epoch 0 [Train]:  12%|█▏        | 61/510 [00:43<05:10,  1.45it/s, loss=1.0009, dice=0.6098]Epoch 0 [Train]:  12%|█▏        | 62/510 [00:43<05:11,  1.44it/s, loss=1.0009, dice=0.6098]Epoch 0 [Train]:  12%|█▏        | 62/510 [00:43<05:11,  1.44it/s, loss=1.0005, dice=0.2979]Epoch 0 [Train]:  12%|█▏        | 63/510 [00:43<05:12,  1.43it/s, loss=1.0005, dice=0.2979]Epoch 0 [Train]:  12%|█▏        | 63/510 [00:44<05:12,  1.43it/s, loss=0.9995, dice=0.5771]Epoch 0 [Train]:  13%|█▎        | 64/510 [00:44<05:12,  1.43it/s, loss=0.9995, dice=0.5771]Epoch 0 [Train]:  13%|█▎        | 64/510 [00:45<05:12,  1.43it/s, loss=0.9961, dice=0.5381]Epoch 0 [Train]:  13%|█▎        | 65/510 [00:45<05:12,  1.43it/s, loss=0.9961, dice=0.5381]Epoch 0 [Train]:  13%|█▎     idx  103
+patient_idx  6
+img_full :  (5, 4, 240, 240, 155)
+idx  438
+patient_idx  29
+img_full :  (5, 4, 240, 240, 155)
+idx  49
+patient_idx  3
+img_full :  (5, 4, 240, 240, 155)
+idx  351
+patient_idx  23
+img_full :  (6, 4, 240, 240, 155)
+idx  71
+patient_idx  4
+img_full :  (5, 4, 240, 240, 155)
+   | 65/510 [00:45<05:12,  1.43it/s, loss=1.0015, dice=0.4341]Epoch 0 [Train]:  13%|█▎        | 66/510 [00:45<05:08,  1.44it/s, loss=1.0015, dice=0.4341]Epoch 0 [Train]:  13%|█▎        | 66/510 [00:46<05:08,  1.44it/s, loss=1.0002, dice=0.6039]Epoch 0 [Train]:  13%|█▎        | 67/510 [00:46<05:05,  1.45it/s, loss=1.0002, dice=0.6039]Epoch 0 [Train]:  13%|█▎        | 67/510 [00:47<05:05,  1.45it/s, loss=1.0004, dice=0.4369]Epoch 0 [Train]:  13%|█▎        | 68/510 [00:47<05:04,  1.45it/s, loss=1.0004, dice=0.4369]Epoch 0 [Train]:  13%|█▎        | 68/510 [00:48<05:04,  1.45it/s, loss=0.9998, dice=0.7094]Epoch 0 [Train]:  14%|█▎        | 69/510 [00:48<05:02,  1.46it/s, loss=0.9998, dice=0.7094]Epoch 0 [Train]:  14%|█▎        | 69/510 [00:48<05:02,  1.46it/s, loss=0.9995, dice=0.6907]Epoch 0 [Train]:  14%|█▎        | 70/510 [00:48<05:03,  1.45it/s, loss=0.9995, dice=0.6907]Epoch 0 [Train]:  14%|█▎        | 70/510 [00:49<05:03,  1.45it/s, loss=1.0018, dice=0.4022]Eidx  244
+patient_idx  16
+img_full :  (4, 4, 240, 240, 155)
+idx  458
+patient_idx  30
+img_full :  (4, 4, 240, 240, 155)
+idx  109
+patient_idx  7
+img_full :  (6, 4, 240, 240, 155)
+idx  453
+patient_idx  30
+img_full :  (4, 4, 240, 240, 155)
+idx  174
+patient_idx  11
+img_full :  (4, 4, 240, 240, 155)
+poch 0 [Train]:  14%|█▍        | 71/510 [00:49<05:01,  1.45it/s, loss=1.0018, dice=0.4022]Epoch 0 [Train]:  14%|█▍        | 71/510 [00:50<05:01,  1.45it/s, loss=1.0001, dice=0.6509]Epoch 0 [Train]:  14%|█▍        | 72/510 [00:50<04:56,  1.48it/s, loss=1.0001, dice=0.6509]Epoch 0 [Train]:  14%|█▍        | 72/510 [00:50<04:56,  1.48it/s, loss=1.0017, dice=0.3703]Epoch 0 [Train]:  14%|█▍        | 73/510 [00:50<04:51,  1.50it/s, loss=1.0017, dice=0.3703]Epoch 0 [Train]:  14%|█▍        | 73/510 [00:51<04:51,  1.50it/s, loss=0.9994, dice=0.9124]Epoch 0 [Train]:  15%|█▍        | 74/510 [00:51<04:55,  1.48it/s, loss=0.9994, dice=0.9124]Epoch 0 [Train]:  15%|█▍        | 74/510 [00:52<04:55,  1.48it/s, loss=1.0003, dice=0.5004]Epoch 0 [Train]:  15%|█▍        | 75/510 [00:52<04:51,  1.49it/s, loss=1.0003, dice=0.5004]Epoch 0 [Train]:  15%|█▍        | 75/510 [00:52<04:51,  1.49it/s, loss=1.0005, dice=0.3577]Epoch 0 [Train]:  15%|█▍        | 76/510 [00:52<04:48,  1.50iidx  420
+patient_idx  28
+img_full :  (6, 4, 240, 240, 155)
+idx  312
+patient_idx  20
+img_full :  (4, 4, 240, 240, 155)
+idx  345
+patient_idx  23
+img_full :  (6, 4, 240, 240, 155)
+idx  396
+patient_idx  26
+img_full :  (5, 4, 240, 240, 155)
+idx  286
+patient_idx  19
+img_full :  (6, 4, 240, 240, 155)
+idx  241
+patient_idx  16
+img_full :  (4, 4, 240, 240, 155)
+t/s, loss=1.0005, dice=0.3577]Epoch 0 [Train]:  15%|█▍        | 76/510 [00:53<04:48,  1.50it/s, loss=1.0042, dice=0.8052]Epoch 0 [Train]:  15%|█▌        | 77/510 [00:53<04:52,  1.48it/s, loss=1.0042, dice=0.8052]Epoch 0 [Train]:  15%|█▌        | 77/510 [00:54<04:52,  1.48it/s, loss=0.9991, dice=0.8853]Epoch 0 [Train]:  15%|█▌        | 78/510 [00:54<06:42,  1.07it/s, loss=0.9991, dice=0.8853]Epoch 0 [Train]:  15%|█▌        | 78/510 [00:55<06:42,  1.07it/s, loss=0.9990, dice=1.0572]Epoch 0 [Train]:  15%|█▌        | 79/510 [00:55<06:12,  1.16it/s, loss=0.9990, dice=1.0572]Epoch 0 [Train]:  15%|█▌        | 79/510 [00:56<06:12,  1.16it/s, loss=0.9985, dice=0.4299]Epoch 0 [Train]:  16%|█▌        | 80/510 [00:56<05:47,  1.24it/s, loss=0.9985, dice=0.4299]Epoch 0 [Train]:  16%|█▌        | 80/510 [00:57<05:47,  1.24it/s, loss=0.9972, dice=1.1699]Epoch 0 [Train]:  16%|█▌        | 81/510 [00:57<05:33,  1.28it/s, loss=0.9972, dice=1.1699]Epoch 0 [Train]:  16%|█▌     idx  368
+patient_idx  24
+img_full :  (6, 4, 240, 240, 155)
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+   | 81/510 [00:57<05:33,  1.28it/s, loss=1.0003, dice=0.3692]Epoch 0 [Train]:  16%|█▌        | 82/510 [00:57<05:16,  1.35it/s, loss=1.0003, dice=0.3692]Epoch 0 [Train]:  16%|█▌        | 82/510 [00:58<05:16,  1.35it/s, loss=1.0010, dice=0.5614]Epoch 0 [Train]:  16%|█▋        | 83/510 [00:58<05:10,  1.37it/s, loss=1.0010, dice=0.5614]slurmstepd-gpu-02: error: *** STEP 176976.0 ON gpu-02 CANCELLED AT 2026-01-13T02:28:28 ***
+slurmstepd-gpu-02: error: *** JOB 176976 ON gpu-02 CANCELLED AT 2026-01-13T02:28:28 ***

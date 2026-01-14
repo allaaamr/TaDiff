@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from src.net.utils import (
+from src.tadiff_net.utils import (
     checkpoint,
     conv_nd,
     linear,
@@ -391,6 +391,116 @@ class AttentionBlock(nn.Module):
         return (x + h).reshape(b, c, *spatial)  # Residual connection
 
 
+class CrossAttentionBlock(nn.Module):
+    """
+    Cross-attention at a single resolution.
+    Q from image (x), K/V from condition (cond).
+
+    x:    [B, C, H, W] (or [B, C, L] after flatten)
+    cond: [B, S, D] or [B, D]  (molecular features / tokens)
+    """
+
+    def __init__(
+        self,
+        channels,          # image channels C
+        cond_dim,          # molecular feature dim D
+        num_heads=1,
+        num_head_channels=-1,
+        use_checkpoint=False,
+        use_new_attention_order=False,  # keep for compatibility
+    ):
+        super().__init__()
+        self.channels = channels
+        if num_head_channels == -1:
+            self.num_heads = num_heads
+            assert channels % num_heads == 0
+            self.head_dim = channels // num_heads
+        else:
+            assert channels % num_head_channels == 0
+            self.num_heads = channels // num_head_channels
+            self.head_dim = num_head_channels
+
+        self.use_checkpoint = use_checkpoint
+
+        self.norm_x = normalization(channels)
+        self.q_proj = conv_nd(1, channels, channels, 1)
+
+        # molecular projections
+        self.k_proj = linear(cond_dim, channels)
+        self.v_proj = linear(cond_dim, channels)
+
+        self.proj_out = zero_module(conv_nd(1, channels, channels, 1))
+
+    def forward(self, x, cond):
+        # allow checkpointing like other blocks
+        return checkpoint(self._forward, (x, cond), self.parameters(), True)
+
+    def _forward(self, x, cond):
+        """
+        x: [B,C,H,W] (or B,C,*spatial)
+        cond: [B,S,D] or [B,D]
+        """
+        b, c, *spatial = x.shape
+        x_in = x
+
+        # flatten image to sequence
+        x = x.reshape(b, c, -1)                    # [B, C, L]
+        x_norm = self.norm_x(x)
+        q = self.q_proj(x_norm)                    # [B, C, L]
+
+        # make cond tokens
+        if cond.dim() == 2:
+            cond = cond[:, None, :]                # [B, 1, D]
+        # cond: [B, S, D]
+        k = self.k_proj(cond)                      # [B, S, C]
+        v = self.v_proj(cond)                      # [B, S, C]
+
+        # reshape for multihead
+        # q: [B*H, d, L]
+        q = q.view(b, self.num_heads, self.head_dim, -1).reshape(b * self.num_heads, self.head_dim, -1)
+        # k,v: [B*H, d, S]
+        k = k.view(b, -1, self.num_heads, self.head_dim).permute(0, 2, 3, 1).reshape(b * self.num_heads, self.head_dim, -1)
+        v = v.view(b, -1, self.num_heads, self.head_dim).permute(0, 2, 3, 1).reshape(b * self.num_heads, self.head_dim, -1)
+
+        # attention: weights [B*H, L, S]
+        scale = 1 / math.sqrt(self.head_dim)
+        w = th.einsum("bdl,bds->bls", q * scale, k * scale)
+        w = softmax_one(w.float(), dim=-1).type(w.dtype)
+
+        # output: [B*H, d, L] then merge heads -> [B, C, L]
+        a = th.einsum("bls,bds->bdl", w, v)
+        a = a.reshape(b, self.num_heads * self.head_dim, -1)  # [B, C, L]
+
+        a = self.proj_out(a)
+        out = (x + a).reshape(b, c, *spatial)
+        return out + (x_in - x_in)  # keep residual form clean; equivalent to out
+
+class MiddleBlockWithCrossAttn(TimestepBlock):
+    def __init__(self, ch, emb_ch, dropout, dims, use_checkpoint,
+                 use_scale_shift_norm, num_heads, num_head_channels,
+                 cond_dim):
+        super().__init__()
+        self.res1 = ResBlock(
+            ch, emb_ch, dropout, out_channels=ch, dims=dims,
+            use_checkpoint=use_checkpoint, use_scale_shift_norm=use_scale_shift_norm
+        )
+        self.xattn = CrossAttentionBlock(
+            channels=ch,
+            cond_dim=cond_dim,
+            num_heads=num_heads,
+            num_head_channels=num_head_channels,
+            use_checkpoint=use_checkpoint,
+        )
+        self.res2 = ResBlock(
+            ch, emb_ch, dropout, out_channels=ch, dims=dims,
+            use_checkpoint=use_checkpoint, use_scale_shift_norm=use_scale_shift_norm
+        )
+
+    def forward(self, x, emb, cond):
+        x = self.res1(x, emb)
+        x = self.xattn(x, cond)
+        x = self.res2(x, emb)
+        return x
 
 class QKVAttentionLegacy(nn.Module):
     """
@@ -579,9 +689,11 @@ class TaDiff_Net(nn.Module):
         num_heads=1,
         num_head_channels=-1,
         num_heads_upsample=-1,
-        use_scale_shift_norm=False,
+        use_scale_shift_norm=True,
         resblock_updown=False,
         use_new_attention_order=False,
+        geno=True,
+        geno_size=13
     ):
         super().__init__()
 
@@ -603,7 +715,7 @@ class TaDiff_Net(nn.Module):
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
-
+        self.geno=geno
         
         self.time_embed = nn.Sequential(
             linear(model_channels, model_channels * 2),
@@ -628,13 +740,24 @@ class TaDiff_Net(nn.Module):
                 linear(model_channels * 2, model_channels),
             )
         
+        self.geno_embed = nn.Sequential(
+            linear(geno_size, model_channels * 2),
+            nn.SiLU(),
+            linear(model_channels * 2, model_channels),
+        )
+        
         # self.ff_emb = FourierFeatures(1, model_channels)
         
         # update the time_embed_dim with concatenated num of intv_embed_dim
+        print("HIII")
         all_time_day_dim = model_channels * 4
+
+        if self.geno:
+            all_time_day_dim = all_time_day_dim + model_channels
         
         # self.layer_norm = nn.LayerNorm(all_time_day_dim)
-        
+        print("DEBUG all_time_day_dim =", all_time_day_dim)
+
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
             [TimestepEmbedSequential(conv_nd(dims, in_channels, ch, 3, padding=1))]
@@ -694,33 +817,47 @@ class TaDiff_Net(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
-            
-        self.middle_block = TimestepEmbedSequential(
-            ResBlock(
-                ch,
-                model_channels,
-                dropout,
-                out_channels=ch,
+        if self.geno:    
+            cond_dim = model_channels  # assuming geno_feat is [B, model_channels]
+            self.middle_block = MiddleBlockWithCrossAttn(
+                ch=ch,
+                emb_ch=model_channels,      # keep as you had, or use all_time_day_dim if you prefer
+                dropout=dropout,
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
-            ),
-            AttentionBlock(
-                ch,
-                use_checkpoint=use_checkpoint,
                 num_heads=num_heads,
                 num_head_channels=num_head_channels,
-                use_new_attention_order=use_new_attention_order,
-            ),
-            ResBlock(
-                ch,
-                model_channels,
-                dropout,
-                dims=dims,
-                use_checkpoint=use_checkpoint,
-                use_scale_shift_norm=use_scale_shift_norm,
-            ),
-        )
+                cond_dim=cond_dim,
+            )
+        else:
+                        self.middle_block = TimestepEmbedSequential(
+                ResBlock(
+                    ch,
+                    model_channels,
+                    dropout,
+                    out_channels=ch,
+                    dims=dims,
+                    use_checkpoint=use_checkpoint,
+                    use_scale_shift_norm=use_scale_shift_norm,
+                ),
+                AttentionBlock(
+                    ch,
+                    use_checkpoint=use_checkpoint,
+                    num_heads=num_heads,
+                    num_head_channels=num_head_channels,
+                    use_new_attention_order=use_new_attention_order,
+                ),
+                ResBlock(
+                    ch,
+                    model_channels,
+                    dropout,
+                    dims=dims,
+                    use_checkpoint=use_checkpoint,
+                    use_scale_shift_norm=use_scale_shift_norm,
+                ),
+            )
+
         self._feature_size += ch
 
         self.output_blocks = nn.ModuleList([])
@@ -787,7 +924,7 @@ class TaDiff_Net(nn.Module):
         self.middle_block.apply(convert_module_to_f32)
         self.output_blocks.apply(convert_module_to_f32)
 
-    def forward(self, x, timesteps, intv_t=None, treat_code=None, i_tg = None):
+    def forward(self, x, timesteps, intv_t=None, treat_code=None, i_tg = None, geno=None):
         """
         Apply the model to an input batch.
 
@@ -797,7 +934,6 @@ class TaDiff_Net(nn.Module):
         :param treat_code: an [N] Tensor of encoded treatment labels, if treatments-conditional, 
         :return: an [N x C x ...] Tensor of outputs.
         """
-        
         hs = []
         b = x.shape[0]
         
@@ -830,14 +966,26 @@ class TaDiff_Net(nn.Module):
             treat_day_diff[i, j, :] = treat_day_diff[i, j, :] + middle_emb[i]
     
         treat_day_diff = treat_day_diff.view(b, -1)
-        
+
+        if self.geno:
+            geno_feat = self.geno_embed(geno)          # [B, model_channels]
+
+            treat_day_diff = th.cat([treat_day_diff, geno_feat], dim=1)
+            middle_emb = middle_emb + geno_feat
+        # else:
+        #     print("DIDNT FIND GENO IT IS NONE??", geno)
+
         h = x.type(self.dtype)
         for module in self.input_blocks:
             h = module(h, treat_day_diff)
             hs.append(h)
         # h_treat = expand_to_planes(self.middle_treat_enc(treat_stack), h.shape)
         # h = th.cat([h, h_treat], dim=1)
-        h = self.middle_block(h, middle_emb)
+        if self.geno:
+            cond = geno_feat
+            h = self.middle_block(h, middle_emb, cond)
+        else:
+            h = self.middle_block(h, middle_emb)
         for module in self.output_blocks:
             h = th.cat([h, hs.pop()], dim=1)
             h = module(h, treat_day_diff)

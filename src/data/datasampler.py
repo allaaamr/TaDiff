@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from typing import List, Dict, Optional
 import math
-from src.data.data_loader import val_transforms, non_load_val_transforms,  npz_keys
+from src.data.data_loader import val_transforms, non_load_val_transforms
 
 # --- Configuration for sampling (paper-inspired) ---
 # overall probability for target being in (past, middle, future)
@@ -14,6 +14,8 @@ P_TARGET_BUCKET = {
 }
 #  k (number of inputs) distribution - by default uniform over {1,2,3}
 P_K = None  # None -> uniform. Or set e.g. {1:0.2,2:0.3,3:0.5}
+npz_keys = ['image', 'label', 'days', 'treatment', 'geno']
+
 
 class PatientSamplingDataset(Dataset):
     """
@@ -28,6 +30,7 @@ class PatientSamplingDataset(Dataset):
       'label': (S=4, H, W, D)
       'days': (S=4,)
       'treatment': (S=4,)
+      'geno': (G,) not time variant (1 per patient not per session)
       'sample_info': metadata for debugging (dict)
     Args:
       file_dicts: list of dicts with keys npz_keys (paths to .npy)
@@ -35,11 +38,13 @@ class PatientSamplingDataset(Dataset):
       samples_per_patient: how many samples to draw per patient per epoch (len = n_patients * samples_per_patient)
       rng_seed: optional seed for reproducibility
     """
-    def __init__(self, file_dicts: List[Dict], transform=None, samples_per_patient: int = 100, rng_seed: Optional[int]=None):
+    def __init__(self, file_dicts: List[Dict], transform=None, samples_per_patient: int = 100, geno_mean=None, geno_std=None, rng_seed: Optional[int]=None):
         self.file_dicts = file_dicts[:]
         self.transform = transform
         self.samples_per_patient = int(samples_per_patient)
         self.rng = np.random.default_rng(rng_seed)
+        self.geno_mean = geno_mean
+        self.geno_std = geno_std
 
         # precompute patient session counts to quickly check valid patients
         self.patient_session_counts = []
@@ -115,6 +120,9 @@ class PatientSamplingDataset(Dataset):
         """
         patient_idx = (idx // self.samples_per_patient) % len(self.file_dicts)
         file_dict = self.file_dicts[patient_idx]
+        print("idx ", idx)
+        print("patient_idx ", patient_idx)
+
 
         # Load arrays
         data = {k: np.load(file_dict[k]) for k in npz_keys}
@@ -122,12 +130,14 @@ class PatientSamplingDataset(Dataset):
         lbl_full = data['label']    # (S_all, D, H, W)
         days_full = data['days']    # (S_all,)
         treat_full = data['treatment']  # (S_all,)
+        geno = data["geno"]
 
-        # print("Patient : ", patient_idx)
-        # print("img_full : ", img_full.shape)
-        # print("lbl_full : ", lbl_full.shape)
-        # print("days_full : ", days_full.shape)
-        # print("treat_full : ", treat_full.shape)
+        if self.geno_mean is not None and self.geno_std is not None:
+            geno = (geno - self.geno_mean) / self.geno_std
+
+        if geno is None:
+            print("GENO IS NONE FOR PT ", patient_idx)
+
 
 
         S_all = int(lbl_full.shape[0])
@@ -135,18 +145,46 @@ class PatientSamplingDataset(Dataset):
         C_full = C_times_S // S_all
         assert C_full * S_all == C_times_S, f"image channels ({C_times_S}) not divisible by sessions ({S_all})"
 
+        S_treat = treat_full.shape[0]
+        if S_all != S_treat:
+            treat_full = treat_full[: S_all - 1]
+            days_full = days_full[: S_all - 1]
+
+        # print("Patient : ", patient_idx)
+        # print("img_full : ", img_full.shape)
+        # print("lbl_full : ", lbl_full.shape)
+        # print("days_full : ", days_full.shape)
+        # print("treat_full : ", treat_full.shape)
+        if treat_full[0] == -1 :
+            print("WARNING TREATMENT -1?? IDK WHY!! for patient ", patient_idx )
+        S = S_all
+        CS = img_full.shape[0]           
+        C = CS // S                      # number of modalities (should be 4)
+        D, H, W = img_full.shape[1:]
+
+        img_full = img_full.reshape(C, S, H, W, D)  # (C, S, H, W, D)
+        img_full = np.moveaxis(img_full, 0, 1)  # -> (S, C, H, W, D)
+
         # Reshape images to (C_full, S_all, H, W, D)
-        img_full = img_full.reshape(C_full, S_all, H, W, D)
+        # img_full = img_full.reshape(C_full, S_all, D, H, W)   
+        # img_full = np.transpose(img_full, (0, 1, 3, 4, 2))    # (C, S, H, W, D)
+        # img_full = np.moveaxis(img_full, 0, 1)  # -> (S, C, H, W, D)
+
+        S, D, H, W = lbl_full.shape
+        lbl_full = lbl_full.reshape(S, H, W, D)
+
+        print("img_full : ", img_full.shape)
 
         # keep first 3 modalities (if T2 was removed in data creation)
-        img_full = img_full[:3, ...]   # (C_use, S_all, H, W, D)
-        C_use = img_full.shape[0]
+        # img_full = img_full[:3, ...]   # ( S_all, C_use, H, W, D)
+        S_treat = treat_full.shape[0]
+        img_full = img_full[:, :3, ...]
 
         # Select target session biased by bucket probs
-        target_idx = self._choose_target_session(S_all)
+        target_idx = self._choose_target_session(S_treat)
 
         # Choose k inputs and sample WITH replacement from remaining sessions
-        remaining = [i for i in range(S_all) if i != target_idx]
+        remaining = [i for i in range(S_treat) if i != target_idx]
         if len(remaining) == 0:
             # degenerate case: only one session -> use it as both input and target (repeat)
             chosen_inputs = [target_idx] * 3
@@ -166,59 +204,69 @@ class PatientSamplingDataset(Dataset):
 
         # --- Build the 4-session blocks from full patient arrays ---
         # img_full: (C_use, S_all, H, W, D) -> select sessions
-        img_sel = img_full[:, seq_order, :, :, :]   # shape: (C_use, 4, H, W, D)
+        # print(img_full.shape)
+        # print(seq_order)
+        # print("treat_full", treat_full)
+        # print("days_full", days_full)
+
+        img_sel = img_full[ seq_order,:, :, :, :]  
         lbl_sel = lbl_full[seq_order, ...]          # shape: (4, D, H, W)
         days_sel = np.asarray(days_full)[seq_order]    # (4,)
         treat_sel = np.asarray(treat_full)[seq_order]  # (4,)
+        # print(days_sel)
+        # print(treat_sel)
+        # days_int, treat_int = build_days_and_treat_intervals(seq_order, days_sel, treat_sel)
+        # print(days_int)
+        # print(treat_int)
+        # # --- Prepare for MONAI transforms: collapse session+modalities into channels ---
+        # # target transform shape: image_for_t (C_use*4, D, H, W)
+        # img_for_t = np.transpose(img_sel, (0, 1, 4, 2, 3))  # (C_use, 4, D, H, W)
+        # img_for_t = img_for_t.reshape(C_use * 4, D, H, W)   # (C_use*4, D, H, W)
+        # lbl_for_t = lbl_sel  # (4, D, H, W)
 
-        # --- Prepare for MONAI transforms: collapse session+modalities into channels ---
-        # target transform shape: image_for_t (C_use*4, D, H, W)
-        img_for_t = np.transpose(img_sel, (0, 1, 4, 2, 3))  # (C_use, 4, D, H, W)
-        img_for_t = img_for_t.reshape(C_use * 4, D, H, W)   # (C_use*4, D, H, W)
-        lbl_for_t = lbl_sel  # (4, D, H, W)
+        # transform_input = {
+        #     'image': img_for_t,
+        #     'label': lbl_for_t,
+        #     'days': days_sel,
+        #     'treatment': treat_sel,
+        #     'geno': geno
+        # }
 
-        transform_input = {
-            'image': img_for_t,
-            'label': lbl_for_t,
-            'days': days_sel,
-            'treatment': treat_sel
-        }
+        # # Apply provided transform (MUST be non-loading) — safe if user passed non_load_val_transforms
+        # if self.transform:
+        #     transformed = self.transform(transform_input)
+        # else:
+        #     transformed = transform_input
 
-        # Apply provided transform (MUST be non-loading) — safe if user passed non_load_val_transforms
-        if self.transform:
-            transformed = self.transform(transform_input)
-        else:
-            transformed = transform_input
+        # img_t = transformed['image']
+        # lbl_t = transformed['label']
+        # days_t = transformed.get('days', days_sel)
+        # treat_t = transformed.get('treatment', treat_sel)
 
-        img_t = transformed['image']
-        lbl_t = transformed['label']
-        days_t = transformed.get('days', days_sel)
-        treat_t = transformed.get('treatment', treat_sel)
+        # # Convert tensors -> numpy for reshape if needed
+        # if isinstance(img_t, torch.Tensor):
+        #     img_t = img_t.detach().cpu().numpy()
+        # if isinstance(lbl_t, torch.Tensor):
+        #     lbl_t = lbl_t.detach().cpu().numpy()
 
-        # Convert tensors -> numpy for reshape if needed
-        if isinstance(img_t, torch.Tensor):
-            img_t = img_t.detach().cpu().numpy()
-        if isinstance(lbl_t, torch.Tensor):
-            lbl_t = lbl_t.detach().cpu().numpy()
+        # # Validate expected shapes
+        # assert img_t.ndim == 4, f"Transformed image must be 4D (C, D, H, W). got {img_t.shape}"
+        # CxS, Dn, Hn, Wn = img_t.shape
+        # assert CxS == C_use * 4, f"unexpected channel count {CxS} != {C_use}*4"
+        # assert lbl_t.ndim == 4 and lbl_t.shape[0] == 4, f"unexpected label shape {lbl_t.shape}"
 
-        # Validate expected shapes
-        assert img_t.ndim == 4, f"Transformed image must be 4D (C, D, H, W). got {img_t.shape}"
-        CxS, Dn, Hn, Wn = img_t.shape
-        assert CxS == C_use * 4, f"unexpected channel count {CxS} != {C_use}*4"
-        assert lbl_t.ndim == 4 and lbl_t.shape[0] == 4, f"unexpected label shape {lbl_t.shape}"
+        # # reshape back => (4, C_use, Hn, Wn, Dn)
+        # img_back = img_t.reshape(C_use, 4, Dn, Hn, Wn)
+        # img_back = np.transpose(img_back, (1, 0, 3, 4, 2))  # sessions first: (4, C_use, Hn, Wn, Dn)
 
-        # reshape back => (4, C_use, Hn, Wn, Dn)
-        img_back = img_t.reshape(C_use, 4, Dn, Hn, Wn)
-        img_back = np.transpose(img_back, (1, 0, 3, 4, 2))  # sessions first: (4, C_use, Hn, Wn, Dn)
-
-        # labels: (4, Dn, Hn, Wn) -> (4, Hn, Wn, Dn)
-        lbl_back = np.transpose(lbl_t, (0, 2, 3, 1))
+        # # labels: (4, Dn, Hn, Wn) -> (4, Hn, Wn, Dn)
+        # lbl_back = np.transpose(lbl_t, (0, 2, 3, 1))
 
         # convert to torch tensors
-        image_tensor = torch.from_numpy(img_back).float()    # (4, C, H, W, D)
-        label_tensor = torch.from_numpy(lbl_back).float()    # (4, H, W, D)
-        days_tensor = torch.from_numpy(np.asarray(days_t)).long()
-        treat_tensor = torch.from_numpy(np.asarray(treat_t)).long()
+        image_tensor = torch.from_numpy(img_sel).float()    # (4, C, H, W, D)
+        label_tensor = torch.from_numpy(lbl_sel).float()    # (4, H, W, D)
+        days_tensor = torch.from_numpy(np.asarray(days_sel)).long()
+        treat_tensor = torch.from_numpy(np.asarray(treat_sel)).long()
 
         sample_info = {
             'patient_idx': patient_idx,
@@ -233,11 +281,93 @@ class PatientSamplingDataset(Dataset):
         # print("label_tensor : ", label_tensor.shape)
         # print("days_tensor : ", days_tensor.shape)
         # print("treat_tensor : ", treat_tensor.shape)
+        # also save which sessions were sampled
+        # with open("debug_patient_sampler/sample_info.txt", "w") as f:
+        #     f.write(f"seq_order: {seq_order}\n")
+        #     f.write(f"chosen_inputs: {chosen_sorted}\n")
+        #     f.write(f"target_idx: {target_idx}\n")
+        #     f.write(f"img_back shape: {img_back.shape}\n")
+        #     f.write(f"lbl_back shape: {lbl_back.shape}\n")
+
+        import os
+        import matplotlib.pyplot as plt
+        os.makedirs("debug_patient_sampler", exist_ok=True)
+
+        # choose mid-slice in depth
+        midz = img_sel.shape[-1] // 2  # Dn
+        # save session 0, modality 0
+        plt.imsave(
+            "debug_patient_sampler/imgsel_s0_m0_midz.png",
+            img_sel[0, 0, :, :, midz],
+            cmap="gray"
+        )
+
+        # save matching label slice (session 0)
+        # lbl_back is (4, H, W, D)
+        plt.imsave(
+            "debug_patient_sampler/lblsel_s0_midz.png",
+            lbl_sel[0, :, :, midz].astype("int16"),
+            cmap="tab10",
+            vmin=0,
+            vmax=int(lbl_sel.max()) if lbl_sel.size > 0 else 1
+        )
+
 
         return {
             'image': image_tensor,      # (4, C, H, W, D)
             'label': label_tensor,      # (4, H, W, D)
             'days': days_tensor,        # (4,)
             'treatment': treat_tensor,  # (4,)
+            'geno': geno,
             'sample_info': sample_info
         }
+
+import numpy as np
+
+def build_days_and_treat_intervals(seq_order, days, treat_sel, fill_days=0, fill_treat=0):
+    """
+    seq_order: list/array of selected session indices (ideally length 4)
+    days:      (S_all-1,) interval days: days[i] corresponds to session i -> i+1
+    treat_sel: (S_all-1,) interval treatment: treat_sel[i] corresponds to session i -> i+1
+
+    Returns:
+      days_int  (3,) where days_int[i]  = sum(days between seq_order[i] and seq_order[i+1])
+      treat_int (3,) where treat_int[i] = treat_sel[ seq_order[i+1] - 1 ]  (interval right before next session)
+    """
+    seq = list(map(int, seq_order))
+    days = np.asarray(days)
+    treat_sel = np.asarray(treat_sel)
+
+    n_edges_days = len(days)         # should be S_all-1
+    n_edges_treat = len(treat_sel)   # should be S_all-1
+
+    days_int = np.full((3,), fill_days, dtype=days.dtype if n_edges_days else np.int64)
+    treat_int = np.full((3,), fill_treat, dtype=treat_sel.dtype if n_edges_treat else np.int64)
+
+    for i in range(3):
+        if i + 1 >= len(seq):
+            break
+
+        a = seq[i]
+        b = seq[i + 1]
+
+        # ---- days interval: computed from consecutive selected sessions ----
+        if n_edges_days == 0:
+            days_int[i] = fill_days
+        elif a == b:
+            days_int[i] = 0
+        else:
+            lo, hi = (a, b) if a < b else (b, a)
+            # clamp to [0, n_edges_days]
+            lo = max(0, min(lo, n_edges_days))
+            hi = max(0, min(hi, n_edges_days))
+            days_int[i] = days[lo:hi].sum() if hi > lo else 0
+
+        # ---- treatment interval: "next element's interval" => treat_sel[b-1] ----
+        t_idx = b - 1
+        if 0 <= t_idx < n_edges_treat:
+            treat_int[i] = treat_sel[t_idx]
+        else:
+            treat_int[i] = fill_treat
+
+    return days_int, treat_int

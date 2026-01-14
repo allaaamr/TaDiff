@@ -1,14 +1,14 @@
 import numpy as np
 import torch
-from src.net.tadiff_unet_arch import TaDiff_Net
+from src.tadiff_net.tadiff_unet_arch import TaDiff_Net
 # import wandb # logging metrics
 
 from pytorch_lightning import LightningModule, Callback
 from torch.optim import AdamW, SGD
-from src.net.ssim import SSIM
+from src.tadiff_net.ssim import SSIM
 
 from monai.optimizers.lr_scheduler import WarmupCosineSchedule
-from src.net.diffusion import GaussianDiffusion
+from src.tadiff_net.diffusion import GaussianDiffusion
 import torch.nn.functional as F
 
 
@@ -30,7 +30,8 @@ class Tadiff_model(LightningModule):
             num_res_blocks=self.cfg.num_res_blocks, 
             channel_mult=self.cfg.channel_mult,
             attention_resolutions=self.cfg.attention_resolutions, 
-            num_heads=self.cfg.num_heads, 
+            num_heads=self.cfg.num_heads,
+            geno=self.cfg.geno,
             )
         
         # if self.cfg.precision=='16':
@@ -57,8 +58,8 @@ class Tadiff_model(LightningModule):
         # self.dice_metric_batch = DiceMetric(include_background=True, reduction="mean_batch") # per class dice
         self.loss_function = F.mse_loss
 
-    def forward(self, x, timesteps, intv_t, treat_code, i_tg=None):
-        return self._model(x, timesteps, intv_t,  treat_code, i_tg)
+    def forward(self, x, timesteps, intv_t, treat_code, geno, i_tg=None):
+        return self._model(x, timesteps, intv_t,  treat_code, i_tg, geno)
     
     def load_model(self, path=None, device='cuda:0'):
         # for loading old trained model without using pytorch-lightning
@@ -127,7 +128,7 @@ class Tadiff_model(LightningModule):
 
 
     def get_loss(self, batch, mode='train'):
-        imgs, label, days, treatments = batch["image"], batch["label"], batch["days"], batch["treatments"]
+        imgs, label, days, treatments, geno = batch["image"], batch["label"], batch["days"], batch["treatments"], batch["geno"]
         n_sess = label.shape[1]
         
         # print("\n[DEBUG] get_loss() called")
@@ -209,8 +210,7 @@ class Tadiff_model(LightningModule):
         t = t.view(gt_img.shape[0]).to(self.device)
                 
         out = self.forward(xt.to(torch.float32), t.to(torch.float32), 
-                           intv_t=intvs, treat_code=treat_cond, 
-                           i_tg=i_tg)
+                           intv_t=intvs, treat_code=treat_cond, geno=geno, i_tg=i_tg)
 
         # Summary: Because the network is trained to:
             # see all sessions as conditioning input,

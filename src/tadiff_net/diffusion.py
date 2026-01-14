@@ -47,8 +47,7 @@ class GaussianDiffusion():
         xt = torch.sqrt(atbar) * x0 + torch.sqrt(1-atbar) * epsilon
         return xt, epsilon
 
-    def TaDiff_inverse(self, net, x=None, intv=None, treat_cond=None, i_tg= None,
-                       steps=None, start_t=None, step_mask = 10, device='cpu'):
+    def TaDiff_inverse(self, net, x=None, intv=None, treat_cond=None, i_tg= None, geno=None, steps=None, start_t=None, step_mask = 10, device='cpu'):
         # Inverse diffusion process for TaDiff
 
         # Set default values for start_t and steps
@@ -90,7 +89,7 @@ class GaussianDiffusion():
             # Generate prediction using the network
             with torch.no_grad():
                 t = torch.tensor([t]).view(1)
-                pred = net(x, t.float().to(device), intv_t=intv,treat_code=treat_cond, i_tg=i_tg)
+                pred = net(x, t.float().to(device), intv_t=intv,treat_code=treat_cond, i_tg=i_tg, geno=geno)
                 img_p, mask = pred[:, 4:7, :, :], pred[:, 0:4, :, :]
             
             # Reshape x for easier indexing

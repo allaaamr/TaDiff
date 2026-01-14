@@ -2,8 +2,8 @@ import torch
 import pytorch_lightning as pl
 
 # ---- CHANGE THIS to your actual checkpoint path ----
-ckpt_path = "ckpt/best.ckpt"
-fixed_path = "ckpt/best_fixed.ckpt"
+ckpt_path = "ckpt_geno_false/last.ckpt"
+fixed_path = "ckpt_geno_false/last_fixed.ckpt"
 # -----------------------------------------------------
 
 # Load checkpoint

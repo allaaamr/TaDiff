@@ -183,16 +183,28 @@ import os
 # if __name__ == "__main__":
 #     main()
 
-img = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-022_image.npy')
-lbl = np.load('/l/users/alaa.mohamed/datasets/lumiere_proc/Patient-022_label.npy')
+def norm01(x):
+    x = x.astype(np.float32)
+    lo, hi = np.percentile(x, [0.5, 99.5])
+    x = (x - lo) / (hi - lo + 1e-8)
+    return np.clip(x, 0, 1)
+
+
+img = np.load('/home/alaa.mohamed/TaDiff/data/miu/PatientID_0025_image.npy')
+lbl = np.load('/home/alaa.mohamed/TaDiff/data/miu/PatientID_0025_label.npy')
+days = np.load('/home/alaa.mohamed/TaDiff/data/miu/PatientID_0025_days.npy')
+treat = np.load('/home/alaa.mohamed/TaDiff/data/miu/PatientID_0025_treatment.npy')
 
 # # Check shapes
-print(f"Image: {img.shape}")  # e.g., (24, 240, 240, 155) = 4 modalities × 6 sessions
-print(f"Label: {lbl.shape}")  # e.g., (6, 240, 240, 155) = 6 sessions
+print(f"Image: {img.shape}")  # e.g., (24, 155, 240, 240) = 4 modalities × 6 sessions
+print(f"Label: {lbl.shape}")  # e.g., (6, 155, 240, 240) = 6 sessions
+print(f"Treatment: {treat}")  # e.g., (6, 155, 240, 240) = 6 sessions
+print(f"days: {days}")  # e.g., (6, 155, 240, 240) = 6 sessions
 
 # # Check value ranges
 print(f"Image range: [{img.min():.3f}, {img.max():.3f}]")  # Should be [0, 1]
-print(f"Label values: {np.unique(lbl)}")  # Should be [0, 1, 3]
+
+print(f"Label values: {np.unique(lbl)}")  # Should be [0, 1, 2, 3, 4]
 
 # # Check for NaN/Inf
 # assert not np.isnan(img).any(), "NaN detected in images"
@@ -213,12 +225,13 @@ C = CS // S                      # number of modalities (should be 4)
 print(f"Detected {S} sessions and {C} modalities.")
 
 # Reshape image to (S, C, H, W, D)
-H, W, D = img.shape[1:]
+D, H, W = img.shape[1:]
 img_reshaped = img.reshape(C, S, H, W, D)  # (C, S, H, W, D)
 img_reshaped = np.moveaxis(img_reshaped, 0, 1)  # -> (S, C, H, W, D)
-
+print(img_reshaped.shape)
 # Middle slice along the last axis (D)
 mid_slice = D // 2
+
 
 # Optional: names for modalities (if you know them; otherwise just use generic names)
 modality_names = [f"Modality {i+1}" for i in range(C)]
@@ -235,9 +248,10 @@ for s in range(S):
     for c in range(C):
         ax = axes[s, c]
         slice2d = img_reshaped[s, c, :, :, mid_slice]
-
-        im = ax.imshow(slice2d, cmap='gray', vmin=0, vmax=1)
-        ax.axis('off')
+        slice2d = norm01(slice2d)
+        ax.imshow(slice2d, cmap="gray")
+        # im = ax.imshow(slice2d, cmap='gray', vmin=0, vmax=1)
+        # ax.axis('off')
 
         # Titles for the first row only
         if s == 0:
@@ -250,7 +264,7 @@ for s in range(S):
 plt.tight_layout()
 
 # Save the figure
-out_path = "results/Patient-022_middle_slice_sessions_modalities.png"
+out_path = "results/Patient-010_middle_slice_sessions_modalities.png"
 plt.savefig(out_path, dpi=300, bbox_inches='tight')
 plt.close(fig)
 
@@ -262,11 +276,15 @@ import matplotlib.patches as mpatches
 
 # lbl shape: (S, H, W, D)
 # Recompute if needed:
-S, H, W, D = lbl.shape
-mid_slice = D // 2
+S, D, H, W = lbl.shape
+# lbl_reshaped = lbl.reshape(S, H, W, D)  # (C, S, H, W, D)
+lbl_reshaped = lbl
 
+print(lbl_reshaped.shape)
+
+mid_slice = D // 2
 # Get unique label values and sort them (e.g. [0,1,3])
-label_vals = np.unique(lbl)
+label_vals = np.unique(lbl_reshaped)
 # Prepare a colormap with enough distinct colors
 cmap = plt.get_cmap('tab10')  # tab10 gives up to 10 discrete colors
 
@@ -275,10 +293,10 @@ fig, axes = plt.subplots(nrows=S, ncols=1, figsize=(4, 3 * S), squeeze=False)
 
 for s in range(S):
     ax = axes[s, 0]
-    mask2d = lbl[s, :, :, mid_slice].astype(int)
+    mask2d = lbl_reshaped[s, mid_slice, :, :].astype(int)
 
     # Display discrete mask
-    im = ax.imshow(mask2d, cmap=cmap, interpolation='nearest', vmin=label_vals.min(), vmax=label_vals.max())
+    im = ax.imshow(mask2d, cmap=cmap, interpolation='bilinear', vmin=label_vals.min(), vmax=label_vals.max())
     ax.axis('off')
     ax.set_ylabel(f"Session {s+1}", fontsize=10)
 
@@ -293,8 +311,38 @@ for i, val in enumerate(label_vals):
 fig.legend(handles=patches, loc='lower center', ncol=len(patches), bbox_to_anchor=(0.5, -0.02))
 plt.tight_layout(rect=[0, 0.03, 1, 1])  # make room for the legend
 
-out_path = "results/Patient-022_label_middle_slice_sessions.png"
+out_path = "results/Patient-014_label_middle_slice_sessions.png"
 plt.savefig(out_path, dpi=300, bbox_inches='tight')
 plt.close(fig)
 
 print(f"Label figure saved to: {out_path}")
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+lbl_bad = np.load("/home/alaa.mohamed/TaDiff/data/miu/PatientID_0010_label.npy")  # (S,D,H,W)
+      # (S, D, H, W) but wrong
+S, D, H, W = lbl_bad.shape
+
+# Undo the bad reshape: go back to (S, H, W, D)
+lbl_sc = lbl_bad.reshape(S, H, W, D)
+
+# Now do the CORRECT axis move to get (S, D, H, W)
+lbl_fixed = np.transpose(lbl_sc, (0, 3, 1, 2)).astype(np.int16)
+
+
+fig, axes = plt.subplots(S, 1, figsize=(5, 3*S), squeeze=False)
+
+for s in range(S):
+    counts = np.count_nonzero(lbl_fixed[s], axis=(1,2))
+    z = int(counts.argmax())
+    axes[s,0].imshow(lbl_fixed[s, z], interpolation="nearest")
+    axes[s,0].set_title(f"Session {s} (best z={z}, nz={counts[z]})")
+    axes[s,0].axis("off")
+
+plt.tight_layout()
+plt.show()
+out_path = "results/Patient-010_middle_slice_sessions_modalities_label.png"
+plt.savefig(out_path, dpi=300, bbox_inches='tight')
+plt.close(fig)

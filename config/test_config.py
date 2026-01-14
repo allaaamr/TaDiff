@@ -4,13 +4,13 @@ from typing import List, Optional
 @dataclass
 class TestConfig:
     # Data paths
-    data_root: str = "/l/users/alaa.mohamed/datasets/lumiere_proc"
-    save_path: str = './results/lumiere/Patient-022'
-    model_checkpoint: str = "./ckpt/best_fixed.ckpt"
+    data_root: str = "/home/alaa.mohamed/TaDiff/data/miu"
+    save_path: str = './results/miu/Patient-032'
+    model_checkpoint: str = "./ckpt_geno_false/last_fixed.ckpt"
 
 
     # Patient IDs to test
-    patient_ids: List[str] = field(default_factory=lambda: ['Patient-022'])
+    patient_ids: List[str] = field(default_factory=lambda: ['PatientID_0032'])
     
     # Model parameters
     model_channels: int = 32
@@ -18,15 +18,15 @@ class TestConfig:
     num_res_blocks: int = 1
     
     # Test parameters
-    diffusion_steps: int = 600
+    diffusion_steps: int = 1000
     target_session_idx: int = 3
-    num_samples: int = 5
+    num_samples: int = 1
     min_tumor_size: int = 20
     top_k_slices: int = 3
     
     
     # Data keys
-    npz_keys: List[str] = field(default_factory=lambda: ['image', 'label', 'days', 'treatment'])
+    npz_keys: List[str] = field(default_factory=lambda: ['image', 'label', 'days', 'treatment', 'geno'])
     
     # Visualization settings
     colors: dict = field(default_factory=lambda: {

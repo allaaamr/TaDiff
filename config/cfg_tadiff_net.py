@@ -12,9 +12,9 @@ data_dir = {
     'lumiere': '/l/users/alaa.mohamed/datasets/lumiere_proc',
     'miu': '/home/alaa.mohamed/TaDiff/data/miu'
 }
-split_dir = 'TaDiff/data/splits/miu/miu_splits.json'
+split_dir = 'data/splits/miu/miu_splits.json'
 image_size = 192
-in_channels = 13 
+in_channels = 13
 out_channels = 7
 num_intv_time = 3
 model_channels = 32
@@ -25,7 +25,7 @@ num_heads = 4
 num_classes = 81  # treat_code
 max_T = 1000  # diffusion steps
 ddpm_schedule = 'linear'  # 'linear', 'cosine', 'log'
-
+geno=False
 # -----------------------------------------------
 # optimizer, lr, loss, train config 
 opt = 'adam'  # adam, adamw, sgd, adan
@@ -51,7 +51,7 @@ check_val_every_n_epoch = 1
 # -----------------------------------------------
 # I/O, system and log config for trainer (e.g. lightning)
 wandb_entity = "allaaamr-mbzuai"  # Change this to your WandB username
-logdir = './ckpt'
+logdir = './ckpt_geno_false'
 log_interval = 1
 seed = 114514  # 5000, 114514, 3407
 gpu_devices = '0'  # str or int e.g. '0', '0,1', '0,1,2,3'

@@ -37,7 +37,7 @@ from pathlib import Path
 from config.cfg_tadiff_net import config as train_config
 from config.test_config import TestConfig
 from src.tadiff_model import Tadiff_model
-from src.net.diffusion import GaussianDiffusion
+from src.tadiff_net.diffusion import GaussianDiffusion
 from src.data.data_loader import load_data, val_transforms
 from src.visualization.visualizer import (
     # plot_uncertainty_figure,
@@ -62,8 +62,14 @@ from src.utils.image_processing import (
 from monai.data import CacheDataset, DataLoader
 from torch.utils.data import Dataset
 
+import inspect
+import src.tadiff_net.diffusion as diffmod
 
-npz_keys= ['image', 'label', 'days', 'treatment']
+print("DIFFUSION IMPORTED FROM:", diffmod.__file__)
+print("TaDiff_inverse signature:", inspect.signature(GaussianDiffusion.TaDiff_inverse))
+
+
+npz_keys= ['image', 'label', 'days', 'treatment', 'geno']
 
 class TestLoader(Dataset):
     """
@@ -114,25 +120,42 @@ class TestLoader(Dataset):
         lbl_full = data['label']    # (S_all, D, H, W)
         days_full = data['days']    # (S_all,)
         treat_full = data['treatment']  # (S_all,)
-
-        # print("Patient : ", patient_idx)
-        # print("img_full : ", img_full.shape)
-        # print("lbl_full : ", lbl_full.shape)
-        # print("days_full : ", days_full.shape)
-        # print("treat_full : ", treat_full.shape)
-
+        geno_full = data['geno']  # (S_all,)
 
         S_all = int(lbl_full.shape[0])
         C_times_S, D, H, W = img_full.shape
         C_full = C_times_S // S_all
         assert C_full * S_all == C_times_S, f"image channels ({C_times_S}) not divisible by sessions ({S_all})"
 
-        # Reshape images to (C_full, S_all, H, W, D)
-        img_full = img_full.reshape(C_full, S_all, D, H, W)
-        img_full = np.transpose(img_full, (1, 0, 3, 4, 2))  # (S, C, H, W, D)
-        lbl_full = lbl_full.transpose(0,2,3,1)
+        S_treat = treat_full.shape[0]
+        if S_all != S_treat:
+            treat_full = treat_full[: S_all - 1]
+            days_full = days_full[: S_all - 1]
+
+
+        print("Patient : ", patient_idx)
+        print("img_full : ", img_full.shape)
+        print("lbl_full : ", lbl_full.shape)
+        print("days_full : ", days_full.shape)
+        print("treat_full : ", treat_full.shape)
+        print("days_full : ", days_full)
+        print("treat_full : ", treat_full)
+        # Reshape images to  S_all, C_full, H, W, D)
+        # img_full = img_full.reshape( S_all, C_full D, H, W)
+        # img_full = np.transpose(img_full, (1, 0, 3, 4, 2))  # (S, C, H, W, D)
+
+        S, D, H, W = lbl_full.shape
+        # Undo the bad reshape: go back to (S, H, W, D)
+        lbl_full = lbl_full.reshape(S, H, W, D)
+        # Now do the CORRECT axis move to get (S, D, H, W)
+        # lbl_full = np.transpose(lbl_full, (0, 3, 1, 2)).astype(np.int16)
+
+
+        img_full = img_full.reshape(C_full, S_all, H, W, D)  # (C, S, H, W, D)
+        img_full = np.moveaxis(img_full, 0, 1)  # -> (S, C, H, W, D)
         print(img_full.shape)
         print(lbl_full.shape)
+
 
         assert img_full.shape[0] == lbl_full.shape[0]  # same number of sessions
         S, C, H, W, D = img_full.shape
@@ -149,6 +172,7 @@ class TestLoader(Dataset):
 
         # after reshape:
         plt.imsave("debug_reshaped_s0_c0_slice100.png", img_full[0, 0, :, :, 100], cmap='gray')
+        plt.imsave("debug_labelreshaped_s0_c0_slice100.png", lbl_full[0,  :, :, 50], cmap='gray')
 
         # Sel
 
@@ -157,6 +181,7 @@ class TestLoader(Dataset):
             'label': lbl_full,      # (S, H, W, D)
             'days': days_full,        # (S,)
             'treatment': treat_full,  # (S,)
+            'geno': geno_full
         }
 
 
@@ -167,6 +192,7 @@ def process_slice(
     labels: torch.Tensor,
     days: torch.Tensor,
     treatments: torch.Tensor,
+    geno: torch.Tensor,
     model: Tadiff_model,
     device: torch.device,
     metrics: Dict,
@@ -209,15 +235,17 @@ def process_slice(
     labels = labels.to(device)
     days = days.to(device)
     treatments = treatments.to(device)
-    
+    geno = geno.to(device)
+    geno = geno.repeat(num_samples, 1)
     # Prepare data
     print("In process slice function, loaded image",images.shape)
     b, s, c, h, w, z = images.shape
     # Reshape images to separate modalities and sessions
     # images = images.view(b, 4, -1, h, w, z)  # t1, t1c, flair, t2
     # images = images.permute(0, 2, 1, 3, 4, 5)  # b, s, c, h, w, z
-    images = images[:, :, :-1, :, :, :]  # remove T2 modal, b, s, c-1, h, w, z
-    print("removed T2 Modal in process slice",images.shape)
+    if c ==4: 
+        images = images[:, :, :-1, :, :, :]  # remove T2 modal, b, s, c-1, h, w, z
+        print("removed T2 Modal in process slice",images.shape)
 
     # Get target session indices
     session_indices = np.array([
@@ -231,12 +259,17 @@ def process_slice(
     print("session_indices ",session_indices )
     # Extract relevant slices
     print("Extract relevant slices")
+    print("labels ", labels.shape)
+
     masks = labels[0, session_indices, :, :, :]
     print("masks ", masks.shape)
     masks = masks[:, :, :, [slice_idx]*num_samples].permute(3, 0, 1, 2)
+    print("masks ", masks.shape)
+
     seq_imgs = images[0, session_indices, :, :, :, :]
     seq_imgs = seq_imgs[:, :, :, :, [slice_idx]*num_samples].permute(4, 0, 1, 2, 3)
-    
+    print("seq_imgs ", seq_imgs.shape)
+
     # Create noise and prepare target images
     noise = torch.randn((num_samples, 3, h, w), device=device)
     x_t = seq_imgs.clone()
@@ -270,6 +303,7 @@ def process_slice(
         intv=[daysq[:, i].to(torch.float32) for i in range(4)],
         treat_cond=[treatments_q[:, i].to(torch.float32) for i in range(4)],
         i_tg=i_tg,
+        geno=geno,
         device=device
     )
     
@@ -529,11 +563,11 @@ def main():
         print("patient has sessions : ", batch['label'].shape[1])
         for session_idx in range(batch['label'].shape[1]):
             # Process each slice
-            print("slices ", batch['label'].shape[-1])
+            print("slices ", batch['label'].shape)
             z_mask_size = calculate_tumor_volumes(batch['label'][0])  # labels[0]: [S, H, W, D]
 
-            top_k_indices = get_slice_indices(z_mask_size, top_k=1)
-            print(top_k_indices)
+            slice_idx = int(get_slice_indices(z_mask_size, top_k=1))
+            print(slice_idx)
             # Get predictions using the first process_slice()
             slice_scores = process_slice(
                 slice_idx=slice_idx,
@@ -542,6 +576,7 @@ def main():
                 labels=batch['label'],
                 days=batch['days'],
                 treatments=batch['treatment'],
+                geno=batch['geno'],
                 model=model,
                 device=device,
                 metrics=metrics_calculator,

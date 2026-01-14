@@ -23,15 +23,14 @@ from monai.data import CacheDataset, DataLoader
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.sadm import SADM 
+
 from config.cfg_tadiff_net import config as default_config
 from config.arg_parse import load_args
-from src.tadiff_model import Tadiff_model
 from src.data.data_loader import val_transforms, non_load_val_transforms,  npz_keys
 from src.evaluation.metrics import calculate_tumor_volumes, get_slice_indices
 from src.utils.image_processing import prepare_image_batch
 from src.data.datasampler import *
-
+from src.sadm_model import SADM
 from torch.utils.data import Dataset
 
 
@@ -41,9 +40,10 @@ def process_slice_train(
     labels: torch.Tensor,
     days: torch.Tensor,
     treatments: torch.Tensor,
-    model: Tadiff_model,
+    model: SADM,
     optimizer: torch.optim.Optimizer,
-    mode: str = 'train'
+    geno: torch.Tensor,
+    mode: str = 'train',
 ) -> Dict[str, float]:
     """
     Process a single 2D slice for training/validation.
@@ -71,14 +71,15 @@ def process_slice_train(
     labels_slice = torch.as_tensor(labels_slice).clone()
     days = torch.as_tensor(days).clone()
     treatments = torch.as_tensor(treatments).clone()
+    geno = torch.as_tensor(geno).clone()
     
     # Get number of sessions and timepoints
     n_sessions = imgs_slice.shape[1]
     n_timepoints = days.shape[1]
     
-    # print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
-    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
+    print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
+    print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
+    print(f"  days: {days.shape}, treatments: {treatments.shape}, geno: {geno.shape}, ")
     
     # # Model expects exactly 4 sessions and 4 timepoints
     # # Select last 4 sessions (most recent)
@@ -120,7 +121,8 @@ def process_slice_train(
         'image': imgs_slice,
         'label': labels_slice,
         'days': days,
-        'treatments': treatments
+        'treatments': treatments,
+        'geno': geno
     }
     
     # Call the existing get_loss() - it does everything!
@@ -150,7 +152,7 @@ def process_slice_train(
 
 def process_session_train(
     batch: Dict[str, torch.Tensor],
-    model: Tadiff_model,
+    model: SADM,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
     top_k: int = 3,
@@ -160,7 +162,7 @@ def process_session_train(
     Process a session - matches test.py's process_session() but for training.
     
     Args:
-        batch: Dictionary with 'image', 'label', 'days', 'treatment'
+        batch: Dictionary with 'image', 'label', 'days', 'treatment','geno'
         model: TaDiff model
         optimizer: Optimizer
         device: Device
@@ -175,6 +177,7 @@ def process_session_train(
     images = batch['image'].to(device)  # [1, C*S, H, W, D] from MONAI
     days = batch['days'].to(device)
     treatments = batch['treatment'].to(device)
+    geno = batch['geno'].to(device)
     # print("images.shape in process sess ", images.shape)
     # print("labels.shape in process sess ", labels.shape)
 
@@ -205,7 +208,8 @@ def process_session_train(
             treatments=treatments,
             model=model,
             optimizer=optimizer if mode == 'train' else None,
-            mode=mode
+            geno=geno,
+            mode=mode,
         )
         slice_metrics.append(metrics)
     
@@ -220,7 +224,7 @@ def process_session_train(
 
 
 def train_epoch(
-    model: Tadiff_model,
+    model: SADM,
     dataloader: DataLoader,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
@@ -260,7 +264,7 @@ def train_epoch(
 
 
 def validate_epoch(
-    model: Tadiff_model,
+    model: SADM,
     dataloader: DataLoader,
     device: torch.device,
     epoch: int
@@ -330,7 +334,7 @@ def main():
     print(f"\nUsing device: {device}")
     
     print("\n" + "="*70)
-    print("TaDiff Training")
+    print("SADM Training")
     print("="*70)
     print(f"Data directory: {config.data_dir[config.data_pool[0]]}")
     print(f"Max epochs: {config.max_epochs}")
@@ -357,7 +361,7 @@ def main():
     print(f"  Val: {len(val_files)} patients\n")
 
     wandb.init(
-    project="TaDiff",                    # change to your project
+    project="SADM",                    # change to your project
     name=f"run_{config.data_pool[0]}",   # or a descriptive name
     config={
         "lr": config.lr,
@@ -366,16 +370,6 @@ def main():
     }
     )
     
-    # # Create dataloaders (no caching - like test.py)
-    # train_dataset = CacheDataset(data=train_files, transform=val_transforms, cache_rate=0.0)
-    # val_dataset = CacheDataset(data=val_files, transform=val_transforms, cache_rate=0.0)
-    
-    # train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
-    # val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0)
-    
-    # Create datasets with sliding windows
-    # train_dataset = SlidingWindowDataset(train_files, transform=non_load_val_transforms)
-    # val_dataset = SlidingWindowDataset(val_files, transform=non_load_val_transforms)
     train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 15), rng_seed=getattr(config, "rng_seed", None))
     val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 10), rng_seed=getattr(config, "rng_seed", None))
     

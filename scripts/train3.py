@@ -33,6 +33,19 @@ from src.data.datasampler import *
 
 from torch.utils.data import Dataset
 
+def grad_norm(p):
+    return 0.0 if (p.grad is None) else p.grad.data.norm().item()
+
+def compute_geno_stats(file_dicts, eps=1e-6):
+    all_g = []
+    for fd in file_dicts:
+        g = np.load(fd["geno"]).astype(np.float32)
+        all_g.append(g[None, :])
+    G = np.concatenate(all_g, axis=0)  # [N_patients, G]
+    mean = G.mean(axis=0)
+    std = G.std(axis=0)
+    std = np.maximum(std, eps)
+    return mean, std
 
 def process_slice_train(
     slice_idx: int,
@@ -42,7 +55,8 @@ def process_slice_train(
     treatments: torch.Tensor,
     model: Tadiff_model,
     optimizer: torch.optim.Optimizer,
-    mode: str = 'train'
+    geno: torch.Tensor,
+    mode: str = 'train',
 ) -> Dict[str, float]:
     """
     Process a single 2D slice for training/validation.
@@ -70,56 +84,18 @@ def process_slice_train(
     labels_slice = torch.as_tensor(labels_slice).clone()
     days = torch.as_tensor(days).clone()
     treatments = torch.as_tensor(treatments).clone()
+    geno = torch.as_tensor(geno).clone()
     
     # Get number of sessions and timepoints
     n_sessions = imgs_slice.shape[1]
     n_timepoints = days.shape[1]
     
-    # print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
-    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
-    
-    # # Model expects exactly 4 sessions and 4 timepoints
-    # # Select last 4 sessions (most recent)
-    
-    # if n_sessions > 4:
-    #     imgs_slice = imgs_slice[:, -4:, :, :, :]  # [1, 4, C, H, W]
-    #     labels_slice = labels_slice[:, -4:, :, :]  # [1, 4, H, W]
-    # elif n_sessions < 4:
-    #     # Pad by repeating last session
-    #     pad_sessions = 4 - n_sessions
-    #     imgs_slice = torch.cat([
-    #         imgs_slice,
-    #         imgs_slice[:, -1:, :, :, :].repeat(1, pad_sessions, 1, 1, 1)
-    #     ], dim=1)
-    #     labels_slice = torch.cat([
-    #         labels_slice,
-    #         labels_slice[:, -1:, :, :].repeat(1, pad_sessions, 1, 1)
-    #     ], dim=1)
-    
-    # # Select corresponding timepoints (last 4)
-    # if n_timepoints > 4:
-    #     days = days[:, -4:]  # [1, 4]
-    #     treatments = treatments[:, -4:]  # [1, 4]
-    # elif n_timepoints < 4:
-    #     # Pad by repeating last timepoint
-    #     pad_timepoints = 4 - n_timepoints
-    #     days = torch.cat([days, days[:, -1:].repeat(1, pad_timepoints)], dim=1)
-    #     treatments = torch.cat([treatments, treatments[:, -1:].repeat(1, pad_timepoints)], dim=1)
-    
-    # print(f"[AFTER SELECTION]")
-    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
-    
-    # Expand labels to 4 channels (model expects [B, S, 4, H, W])
-    # labels_slice = labels_slice.unsqueeze(2).repeat(1, 1, 4, 1, 1)  # [1, 4, 4, H, W]
-    
-    # Create batch dict (what get_loss expects)
     batch = {
         'image': imgs_slice,
         'label': labels_slice,
         'days': days,
-        'treatments': treatments
+        'treatments': treatments,
+        'geno': geno
     }
     
     # Call the existing get_loss() - it does everything!
@@ -129,6 +105,9 @@ def process_slice_train(
         # Backward
         optimizer.zero_grad()
         loss.backward()
+        # for name, p in model.named_parameters():
+        #     if "geno_embed" in name or "k_proj" in name or "v_proj" in name or "treats_embed" in name:
+        #         print(name, grad_norm(p))
         
         # Gradient clipping
         if hasattr(model.cfg, 'grad_clip') and model.cfg.grad_clip > 0:
@@ -174,6 +153,8 @@ def process_session_train(
     images = batch['image'].to(device)  # [1, C*S, H, W, D] from MONAI
     days = batch['days'].to(device)
     treatments = batch['treatment'].to(device)
+    geno = batch['geno'].to(device)
+
     # print("images.shape in process sess ", images.shape)
     # print("labels.shape in process sess ", labels.shape)
 
@@ -204,7 +185,8 @@ def process_session_train(
             treatments=treatments,
             model=model,
             optimizer=optimizer if mode == 'train' else None,
-            mode=mode
+            mode=mode,
+            geno=geno
         )
         slice_metrics.append(metrics)
     
@@ -374,8 +356,9 @@ def main():
     # Create datasets with sliding windows
     # train_dataset = SlidingWindowDataset(train_files, transform=non_load_val_transforms)
     # val_dataset = SlidingWindowDataset(val_files, transform=non_load_val_transforms)
-    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 15), rng_seed=getattr(config, "rng_seed", None))
-    val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 10), rng_seed=getattr(config, "rng_seed", None))
+    geno_mean, geno_std = compute_geno_stats(train_files)
+    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 15),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
+    val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 10),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
     
     print(f"\n{'='*70}")
     print("Sliding Window Statistics:")

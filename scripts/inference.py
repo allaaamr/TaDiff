@@ -22,7 +22,7 @@ import numpy as np
 from typing import List, Dict, Optional
 
 from src.tadiff_model import Tadiff_model
-from src.net.diffusion import GaussianDiffusion
+from src.tadoff_net.diffusion import GaussianDiffusion
 from src.data.data_loader import load_data
 from src.visualization.visualizer import Visualizer, create_directory
 from src.utils.image_processing import prepare_image_batch, create_noise_tensor

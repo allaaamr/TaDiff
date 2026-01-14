@@ -31,6 +31,7 @@ def load_args(cfg):
     parser.add_argument("--log_interval", type=int, default=cfg.log_interval,
                         help="Logging interval in steps")
     parser.add_argument("--split_dir", type=str, default=cfg.split_dir,)
+
     # ============================================
     # MODE
     # ============================================
@@ -40,6 +41,7 @@ def load_args(cfg):
     parser.add_argument('--do_test_only', default=cfg.do_test_only, 
                         action='store_true',
                         help="Only perform testing (skip training)")
+    parser.add_argument("--geno", type=bool, default=cfg.geno)
     
     # ============================================
     # DATA
