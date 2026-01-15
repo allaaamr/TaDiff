@@ -17,8 +17,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from DDPM import ContextUNet2D
-from ViVit import SequenceAwareViT2D
+from src.sadm_net.DDPM.ddpm import ContextUNet2D
+from src.sadm_net.ViViT.vivit import SequenceAwareViT2D
 
 try:
     from monai.losses import DiceLoss
@@ -74,7 +74,7 @@ class SADM(nn.Module):
     def __init__(
         self,
         img_size: int = 240,
-        patch_size: int = 16,
+        patch_size: int = 20,
         in_channels: int = 3,  # Channels PER SESSION (T1, T1c, FLAIR)
         num_seg_classes: int = 1,  # Number of segmentation classes (1 mask per session)
         embed_dim: int = 256,

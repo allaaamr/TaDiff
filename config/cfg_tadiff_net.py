@@ -1,5 +1,7 @@
 # config/cfg_tadiff_net.py
 from munch import DefaultMunch
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 # -----------------------------------------------
 # model config 
@@ -12,8 +14,8 @@ data_dir = {
     'lumiere': '/l/users/alaa.mohamed/datasets/lumiere_proc',
     'miu': '/home/alaa.mohamed/TaDiff/data/miu'
 }
-split_dir = 'data/splits/miu/miu_splits.json'
-image_size = 192
+split_dir = 'data/splits/miu/miu_splits2.json'
+image_size = 240
 in_channels = 13
 out_channels = 7
 num_intv_time = 3
@@ -51,7 +53,7 @@ check_val_every_n_epoch = 1
 # -----------------------------------------------
 # I/O, system and log config for trainer (e.g. lightning)
 wandb_entity = "allaaamr-mbzuai"  # Change this to your WandB username
-logdir = './ckpt_geno_false'
+logdir = './ckpt_genoF_tadiff'
 log_interval = 1
 seed = 114514  # 5000, 114514, 3407
 gpu_devices = '0'  # str or int e.g. '0', '0,1', '0,1,2,3'
@@ -73,6 +75,10 @@ ckpt_mode = "min"  # 'min' for loss, 'max' for dice
 do_train_only = False
 do_test_only = False
 
+
+# Thresholds
+mask_threshold = 0.49
+dice_thresholds = field(default_factory=lambda: [0.25, 0.5, 0.75]) 
 # -----------------------------------------------
 # Create config object
 config_keys = [k for k, v in globals().items() if not k.startswith('_') and 

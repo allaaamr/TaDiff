@@ -73,7 +73,6 @@ npz_keys= ['image', 'label', 'days', 'treatment', 'geno']
 
 class TestLoader(Dataset):
     """
-    Dataset that implements the paper-style sampling across a patient's full timeline:
       - Choose a target session among all sessions (biased to produce past/middle/future ratios)
       - Choose k in {1,2,3} input sessions from remaining sessions WITH replacement
       - Pad inputs to exactly 3 and put target last → [in1,in2,in3,target]
@@ -153,6 +152,8 @@ class TestLoader(Dataset):
 
         img_full = img_full.reshape(C_full, S_all, H, W, D)  # (C, S, H, W, D)
         img_full = np.moveaxis(img_full, 0, 1)  # -> (S, C, H, W, D)
+        img_full = normalize_mri_per_modality(img_full)
+
         print(img_full.shape)
         print(lbl_full.shape)
 
@@ -518,7 +519,7 @@ def setup_model(config: TestConfig, train_config, device: str):
         model_channels=config.model_channels,
         num_heads=config.num_heads,
         num_res_blocks=config.num_res_blocks,
-        strict=False,
+        strict=True,
         config=train_config
     )
     model.to(device)

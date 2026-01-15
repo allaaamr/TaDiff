@@ -1,13 +1,9 @@
 """
-TaDiff Training Script - Matches test.py structure
-
-Simple training that:
-1. Loads volumes patient by patient (like test.py)
+TaDiff Training Script 
+1. Loads volumes patient by patient 
 2. Identifies top-k tumor slices per session
-3. Calls model.get_loss() for each slice (already implemented!)
-4. No complex dataset classes - just use DataLoader
+3. Calls model.get_loss() for each slice 
 
-Matches test.py structure but adds training loop.
 """
 
 import os
@@ -33,6 +29,88 @@ from src.data.datasampler import *
 
 from torch.utils.data import Dataset
 
+import os
+import matplotlib.pyplot as plt
+
+def save_gray(img2d, path):
+    arr = img2d.detach().float().cpu().numpy()
+    plt.imsave(path, arr, cmap="gray")
+
+@torch.no_grad()
+def reconstruct_x0_from_eps(x_t, eps_pred, alphabar_t, eps=1e-8):
+    # x_t, eps_pred: (B,3,H,W)
+    # alphabar_t: (B,1,1,1)
+    return (x_t - torch.sqrt(1 - alphabar_t) * eps_pred) / (torch.sqrt(alphabar_t) + eps)
+
+@torch.no_grad()
+def visualize_one_val_sample(model, diffusion, batch, slice_idx, device, epoch, out_root="debug_vis", t_vis=500):
+    os.makedirs(out_root, exist_ok=True)
+    out_dir = os.path.join(out_root, f"epoch_{epoch:03d}")
+    os.makedirs(out_dir, exist_ok=True)
+
+    model.eval()
+
+    images = batch["image"].to(device)   # expected (1,S,C,H,W,D)
+    labels = batch["label"].to(device)
+    days = batch["days"].to(device)
+    treatments = (batch["treatment"] if "treatment" in batch else batch["treatments"]).to(device)
+    geno = batch["geno"].to(device)
+
+    # extract 2D slice
+    imgs2d = images[..., slice_idx]  # (1,S,C,H,W)
+    lbls2d = labels[..., slice_idx]  # (1,S,H,W)
+
+    B, S, C, H, W = imgs2d.shape
+
+    # target is last session (training behavior)
+    i_tg = torch.full((B,), -1, dtype=torch.long, device=device)
+    idx_b = torch.arange(B, device=device)
+    x0 = imgs2d[idx_b, i_tg, ...].float()  # (1,C,H,W)
+    y0 = lbls2d[idx_b, i_tg, ...].float()  # (1,H,W)
+
+    # fixed timestep for visualization
+    t_int = int(min(max(1, t_vis), diffusion.T))
+    t = torch.full((B,), t_int, dtype=torch.long, device=device)
+
+    # noise (make sure diffusion is on the same device)
+    # your diffusion.sample uses alphabar indexing with t-1; if it expects CPU t, pass t.cpu()
+    x_t, eps = diffusion.sample(x0, t.cpu())
+    x_t = x_t.to(device)
+    eps = eps.to(device)
+
+    # build model input: replace target session with x_t, then flatten
+    imgs_in = imgs2d.clone().float()
+    imgs_in[idx_b, i_tg, ...] = x_t
+    x_in = imgs_in.reshape(B, S*C, H, W).contiguous()
+
+    # conditioning (same as your get_loss)
+    s1_days, s2_days, s3_days, t_days = days[:, 0], days[:, 1], days[:, 2], days[:, 3]
+    tr1, tr2, tr3, trt = treatments[:, 0], treatments[:, 1], treatments[:, 2], treatments[:, 3]
+    intvs = [s1_days.float(), s2_days.float(), s3_days.float(), t_days.float()]
+    treat_cond = [tr1.float(), tr2.float(), tr3.float(), trt.float()]
+
+    pred = model(x_in, t.float(), intv_t=intvs, treat_code=treat_cond, geno=geno, i_tg=i_tg)
+    eps_pred = pred[:, 4:7, :, :]  # (1,3,H,W)
+    mask_pred = pred[:, 0:4, :, :] # (1,4,H,W)
+
+    alphabar_t = diffusion.alphabar[t_int - 1].to(device).view(B, 1, 1, 1)
+    x0_hat = reconstruct_x0_from_eps(x_t, eps_pred, alphabar_t)
+
+    # Save the 3 modalities
+    modal_names = ["t1", "t1c", "flair"] if C == 3 else [f"m{m}" for m in range(C)]
+    for m, name in enumerate(modal_names[:C]):
+        save_gray(x0[0, m],    os.path.join(out_dir, f"x0_gt_{name}.png"))
+        save_gray(x_t[0, m],   os.path.join(out_dir, f"xt_noisy_t{t_int}_{name}.png"))
+        save_gray(x0_hat[0, m],os.path.join(out_dir, f"x0hat_{name}.png"))
+
+    # Optional: save mask prediction vs GT
+    # pick one channel, or argmax if multi-class; here just save channel 3 as example
+    save_gray(torch.sigmoid(mask_pred[0, -1]), os.path.join(out_dir, "mask_pred_ch3.png"))
+    # GT might be not one-hot; adapt as needed:
+    # if y0 is integer mask, just save it
+    save_gray(y0[0], os.path.join(out_dir, "mask_gt.png"))
+
+
 def grad_norm(p):
     return 0.0 if (p.grad is None) else p.grad.data.norm().item()
 
@@ -56,6 +134,7 @@ def process_slice_train(
     model: Tadiff_model,
     optimizer: torch.optim.Optimizer,
     geno: torch.Tensor,
+    epoch: int,
     mode: str = 'train',
 ) -> Dict[str, float]:
     """
@@ -101,7 +180,7 @@ def process_slice_train(
     # Call the existing get_loss() - it does everything!
     if mode == 'train':
         model.train()
-        loss, mse, dice = model.get_loss(batch, mode='train')
+        loss, mse, dice = model.get_loss(batch, epoch, mode='train')
         # Backward
         optimizer.zero_grad()
         loss.backward()
@@ -117,7 +196,7 @@ def process_slice_train(
     else:
         model.eval()
         with torch.no_grad():
-            loss, mse, dice = model.get_loss(batch, mode='val')
+            loss, mse, dice = model.get_loss(batch, epoch, mode='val')
     
     return {
         'loss': loss.item(),
@@ -131,6 +210,7 @@ def process_session_train(
     model: Tadiff_model,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
+    epoch: int,
     top_k: int = 3,
     mode: str = 'train'
 ) -> Dict[str, float]:
@@ -186,7 +266,8 @@ def process_session_train(
             model=model,
             optimizer=optimizer if mode == 'train' else None,
             mode=mode,
-            geno=geno
+            geno=geno,
+            epoch=epoch
         )
         slice_metrics.append(metrics)
     
@@ -218,6 +299,7 @@ def train_epoch(
             model=model,
             optimizer=optimizer,
             device=device,
+            epoch=epoch,
             top_k=3,
             mode='train'
         )
@@ -250,6 +332,7 @@ def validate_epoch(
     model.eval()
     epoch_metrics = []
     
+
     with torch.no_grad():
         pbar = tqdm(dataloader, desc=f"Epoch {epoch} [Val]")
         for batch_idx, batch in enumerate(pbar):
@@ -258,6 +341,7 @@ def validate_epoch(
                 model=model,
                 optimizer=None,
                 device=device,
+                epoch=epoch,
                 top_k=3,
                 mode='val'
             )
@@ -357,8 +441,8 @@ def main():
     # train_dataset = SlidingWindowDataset(train_files, transform=non_load_val_transforms)
     # val_dataset = SlidingWindowDataset(val_files, transform=non_load_val_transforms)
     geno_mean, geno_std = compute_geno_stats(train_files)
-    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 15),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
-    val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 10),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
+    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 1),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
+    val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 1),  geno_mean=geno_mean, geno_std=geno_std, rng_seed=getattr(config, "rng_seed", None))
     
     print(f"\n{'='*70}")
     print("Sliding Window Statistics:")

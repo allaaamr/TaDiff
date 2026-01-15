@@ -77,9 +77,9 @@ def process_slice_train(
     n_sessions = imgs_slice.shape[1]
     n_timepoints = days.shape[1]
     
-    print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
-    print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    print(f"  days: {days.shape}, treatments: {treatments.shape}, geno: {geno.shape}, ")
+    # print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
+    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
+    # print(f"  days: {days.shape}, treatments: {treatments.shape}, geno: {geno.shape}, ")
     
     # # Model expects exactly 4 sessions and 4 timepoints
     # # Select last 4 sessions (most recent)
@@ -394,7 +394,7 @@ def main():
     model = SADM(
         img_size=config.image_size,
         in_channels=config.in_channels,
-        out_channels=config.in_channels + 4,  # image + 4 seg classes
+        # out_channels=config.in_channels + 4,  # image + 4 seg classes
         embed_dim=256,
         model_channels=config.model_channels,
         n_T=config.max_T,

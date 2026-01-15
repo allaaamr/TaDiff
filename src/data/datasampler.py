@@ -120,8 +120,6 @@ class PatientSamplingDataset(Dataset):
         """
         patient_idx = (idx // self.samples_per_patient) % len(self.file_dicts)
         file_dict = self.file_dicts[patient_idx]
-        print("idx ", idx)
-        print("patient_idx ", patient_idx)
 
 
         # Load arrays
@@ -165,6 +163,8 @@ class PatientSamplingDataset(Dataset):
         img_full = img_full.reshape(C, S, H, W, D)  # (C, S, H, W, D)
         img_full = np.moveaxis(img_full, 0, 1)  # -> (S, C, H, W, D)
 
+        img_full = normalize_mri_per_modality(img_full)
+
         # Reshape images to (C_full, S_all, H, W, D)
         # img_full = img_full.reshape(C_full, S_all, D, H, W)   
         # img_full = np.transpose(img_full, (0, 1, 3, 4, 2))    # (C, S, H, W, D)
@@ -172,8 +172,6 @@ class PatientSamplingDataset(Dataset):
 
         S, D, H, W = lbl_full.shape
         lbl_full = lbl_full.reshape(S, H, W, D)
-
-        print("img_full : ", img_full.shape)
 
         # keep first 3 modalities (if T2 was removed in data creation)
         # img_full = img_full[:3, ...]   # ( S_all, C_use, H, W, D)
@@ -371,3 +369,37 @@ def build_days_and_treat_intervals(seq_order, days, treat_sel, fill_days=0, fill
             treat_int[i] = fill_treat
 
     return days_int, treat_int
+
+def normalize_mri_per_modality(img, clip_p=(0.5, 99.5), eps=1e-6):
+    """
+    img: (S, C, H, W, D) numpy array
+    Returns normalized img of same shape (float32)
+    Robust: clip percentiles then z-score on nonzero voxels.
+    """
+    img = img.astype(np.float32, copy=False)
+    out = np.empty_like(img, dtype=np.float32)
+
+    S, C = img.shape[0], img.shape[1]
+    for s in range(S):
+        for c in range(C):
+            vol = img[s, c]  # (H, W, D)
+
+            # Use nonzero mask to avoid background dominating stats
+            m = vol != 0
+            if m.sum() < 100:  # too little signal; just copy
+                out[s, c] = vol
+                continue
+
+            vals = vol[m]
+            lo = np.percentile(vals, clip_p[0])
+            hi = np.percentile(vals, clip_p[1])
+            vals = np.clip(vals, lo, hi)
+
+            mu = vals.mean()
+            sd = vals.std()
+            sd = max(sd, eps)
+
+            vol_n = (vol - mu) / sd
+            out[s, c] = vol_n
+
+    return out

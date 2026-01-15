@@ -153,7 +153,7 @@ class SpatialTransformerDecoder(nn.Module):
     
     def __init__(
         self,
-        dim: int = 256,
+        dim: int = 240,
         depth: int = 4,
         num_heads: int = 8,
         mlp_ratio: float = 4.0,
@@ -244,7 +244,7 @@ class SequenceAwareViT2D(nn.Module):
     
     def __init__(
         self,
-        img_size: int = 128,
+        img_size: int = 240,
         patch_size: int = 8,
         in_channels: int = 3,
         embed_dim: int = 256,
@@ -426,6 +426,10 @@ class SequenceAwareViT2D(nn.Module):
         
         # ============ POSITIONAL ENCODING ============
         # Add spatial positional embedding
+
+        # print("H,W:", H, W, "patch_size:", self.patch_size)
+        # print("patches N:", patches.shape[2], "spatial_pos_embed N:", self.spatial_pos_embed.shape[1])
+
         patches = patches + self.spatial_pos_embed.unsqueeze(1)  # broadcast over S
         
         # Add temporal positional embedding (learnable, for discrete indices)

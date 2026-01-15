@@ -2,18 +2,209 @@ import numpy as np
 import torch
 from src.tadiff_net.tadiff_unet_arch import TaDiff_Net
 # import wandb # logging metrics
-
+import os
 from pytorch_lightning import LightningModule, Callback
 from torch.optim import AdamW, SGD
 from src.tadiff_net.ssim import SSIM
-
+import matplotlib.pyplot as plt
+from src.visualization.visualizer import (
+    # plot_uncertainty_figure,
+    # save_visualization_results,
+    create_directory,
+    Visualizer
+)
 from monai.optimizers.lr_scheduler import WarmupCosineSchedule
 from src.tadiff_net.diffusion import GaussianDiffusion
+from src.evaluation.metrics import (
+    # setup_metrics,
+    # calculate_metrics,
+    calculate_tumor_volumes,
+    get_slice_indices,
+    MetricsCalculator
+)
 import torch.nn.functional as F
-
+from typing import List, Dict, Optional
 
 from monai.losses.dice import DiceLoss, GeneralizedDiceFocalLoss
 from monai.metrics import DiceMetric
+
+
+def evaluate_predictions(
+    predictions: Dict[str, torch.Tensor],
+    metrics: Dict,
+    session_idx: int,
+    slice_idx: int,
+    session_path: str
+) -> Dict[str, Dict]:
+
+    """
+    Evaluate model predictions and generate visualizations.
+    
+    Performs:
+    1. Ensemble prediction averaging
+    2. Metric calculation for individual and ensemble predictions
+    3. Visualization of predictions vs ground truth
+    4. Result saving
+    
+    Args:
+        predictions: Dictionary containing:
+            - 'images': Predicted scans [num_samples, C, H, W]
+            - 'masks': Predicted segmentations [num_samples, 4, H, W]
+            - 'ground_truth': Target scans [num_samples, C, H, W]
+            - 'target_masks': Target segmentations [num_samples, 4, H, W]
+        metrics: Dictionary of metric functions
+        session_idx: Index of the session being processed
+        slice_idx: Z-index of the slice being processed
+        session_path: Directory for saving results
+        
+    Returns:
+        Dict[str, Dict]: Dictionary of metric scores for each sample and ensemble
+        
+    Outputs:
+        - PNG visualizations saved to {session_path}/
+        - Console output of evaluation metrics
+    """
+    scores = {}
+
+
+    # Calculate average predictions
+    # predictions['images'] = predictions['images'].squeeze(0)
+    # predictions['masks'] = predictions['masks'].squeeze(0)
+    # predictions['ground_truth'] = predictions['ground_truth'].squeeze(0)
+    # predictions['target_masks'] = predictions['target_masks'].squeeze(0)
+
+    # print("predictions['images'] ", predictions['images'].shape)
+    # print("predictions['masks']" , predictions['masks'].shape)
+    # print("predictions['ground_truth']" ,predictions['ground_truth'].shape)
+    # print("predictions['target_masks']" , predictions['target_masks'].shape)
+
+    avg_img = torch.mean(predictions['images'], 0)  # (3, H, W)
+    avg_mask_pred = torch.sigmoid(predictions['masks'])
+    avg_mask_pred = torch.mean(avg_mask_pred, 0)    # (4, H, W)
+    
+    # Calculate uncertainty maps
+    img_std = torch.std(predictions['images'], 0)  # (3, H, W) - t1,t1c,flair 
+    seg_seq_std = torch.std(predictions['masks'], 0)  # (4, H, W) - uncertainty in sequence
+    
+    # Prepare visualization data
+    images = {
+        'prediction': predictions['images'][0].cpu().numpy(),  # Use first sample for visualization
+        'ground_truth': predictions['ground_truth'][0].cpu().numpy()
+    }
+    masks = {
+        'prediction': avg_mask_pred.cpu().numpy().astype(np.float32),  # Convert to float32
+        'ground_truth': predictions['target_masks'][0].cpu().numpy().astype(np.float32),  # Convert to float32
+        'uncertainty': img_std.cpu().numpy().astype(np.float32),  # Add uncertainty map
+        'sequence_uncertainty': seg_seq_std.cpu().numpy().astype(np.float32)  # Add sequence uncertainty
+    }
+    
+    # Create visualizer with default colors
+    visualizer = Visualizer({
+        0: (0, 0, 0),       # background
+        1: (255, 0, 0),     # red
+        2: (0, 255, 0),     # green  
+        3: (0, 0, 255),     # blue
+        4: (255, 255, 0)    # yellow for ensemble
+    })
+
+    modal_names = ['t1', 't1c', 'flair']
+    
+    try:
+        # Ensure directory exists
+        create_directory(session_path)
+        
+        # Create file prefix
+        file_prefix = f'ses-{session_idx:02d}_slice-{slice_idx:03d}'
+        
+        # Convert masks to PIL images
+        pred_mask_pil = visualizer.to_pil(masks['prediction'][-1, :, :])
+        gt_mask_pil = visualizer.to_pil(masks['ground_truth'][-1, :, :])
+        
+        # Save masks
+        pred_mask_pil.save(os.path.join(session_path, f"{file_prefix}-pred-mask.png"))
+        gt_mask_pil.save(os.path.join(session_path, f"{file_prefix}-gt-mask.png"))
+        
+        # Save uncertainty maps
+        visualizer.plot_uncertainty(masks['uncertainty'][0, :, :], 
+                                    os.path.join(session_path, f"{file_prefix}-uncertainty_t1.png"), 
+                                    overlay=avg_img[0, :, :].cpu().numpy())
+        visualizer.plot_uncertainty(masks['uncertainty'][1, :, :], 
+                                    os.path.join(session_path, f"{file_prefix}-uncertainty_t1c.png"),
+                                    overlay=avg_img[1, :, :].cpu().numpy())
+        visualizer.plot_uncertainty(masks['uncertainty'][2, :, :], 
+                                    os.path.join(session_path, f"{file_prefix}-uncertainty_flair.png"),
+                                    overlay=avg_img[2, :, :].cpu().numpy())
+        
+        visualizer.plot_uncertainty(masks['sequence_uncertainty'][0, :, :], 
+                                    os.path.join(session_path, f"{file_prefix}-uncertainty_mask.png"),
+                                    overlay=avg_img[2, :, :].cpu().numpy())
+        # uncertainty_pil = visualizer.to_pil(masks['uncertainty'][-1, :, :])
+        # seq_uncertainty_pil = visualizer.to_pil(masks['sequence_uncertainty'][-1, :, :])
+        # uncertainty_pil.save(os.path.join(session_path, f"{file_prefix}-uncertainty.png"))
+        # seq_uncertainty_pil.save(os.path.join(session_path, f"{file_prefix}-sequence-uncertainty.png"))
+        
+        # Save images with overlays and contours for each modality
+        for j in range(3):  # For each modality
+            pred_img = visualizer.to_pil(images['prediction'][j])
+            gt_img = visualizer.to_pil(images['ground_truth'][j])
+            
+            # Save original images
+            pred_img.save(os.path.join(session_path, f"{file_prefix}-pred-{modal_names[j]}.png"))
+            gt_img.save(os.path.join(session_path, f"{file_prefix}-gt-{modal_names[j]}.png"))
+            
+            # Save overlays
+            # pred_overlay = visualizer.overlay_maps(pred_img, pred_mask_pil, gt_mask_pil)
+            # pred_overlay.save(os.path.join(session_path, f"{file_prefix}-pred-{modal_names[j]}_overlay.png"))
+            
+            # Save contours
+            pred_contour = visualizer.draw_contour(pred_img, pred_mask_pil)
+            pred_contour.save(os.path.join(session_path, f"{file_prefix}-pred-{modal_names[j]}_contour.png"))
+            
+            
+    except Exception as e:
+        print(f"Error saving visualization results: {e}")
+        raise
+    
+    print("predictions['target_masks'] ", predictions['target_masks'].shape)
+    pm = predictions['masks']    # (N, S, H, W) float (prob)
+    gm = predictions['target_masks']  # (N, S, H, W)
+
+    print("preds dtype/max/min:", pm.dtype, pm.min().item(), pm.max().item())
+    print("gt   dtype/max/min:", gm.dtype, gm.min().item(), gm.max().item())
+    print("gt unique (sample 0, session 0):", torch.unique(gm[0,0])[:20])
+    print("gt sum per session (sample 0):", [gm[0,s].sum().item() for s in range(gm.shape[1])])
+
+    gt_masks = predictions['target_masks']
+    # bring to CPU if needed
+    gt_masks = gt_masks.clone()
+    # If dtype not binary, threshold and convert to long
+    if gt_masks.max() > 1.0:
+        gt_masks_bin = (gt_masks > 0).long()
+    else:
+        gt_masks_bin = gt_masks.round().long()
+    predictions['target_masks'] = gt_masks_bin
+    
+    # Calculate metrics for each sample
+    for i in range(len(predictions['images'])):
+        sample_metrics = metrics.calculate_metrics(
+            pred_img=predictions['images'][i].unsqueeze(0),
+            gt_img=predictions['ground_truth'][i].unsqueeze(0),
+            pred_mask=predictions['masks'][i].unsqueeze(0),
+            gt_mask=predictions['target_masks'][i].unsqueeze(0)
+        )
+        scores[f'sample_{i}'] = sample_metrics
+    
+    # Calculate metrics for ensemble prediction
+    ensemble_metrics = metrics.calculate_metrics(
+        pred_img=avg_img.unsqueeze(0),
+        gt_img=predictions['ground_truth'][0].unsqueeze(0),
+        pred_mask=avg_mask_pred.unsqueeze(0),
+        gt_mask=predictions['target_masks'][0].unsqueeze(0)
+    )
+    scores['ensemble'] = ensemble_metrics
+    
+    print(f"Session {session_idx}, Slice {slice_idx} evaluation complete")
+    return scores
 
 class Tadiff_model(LightningModule):
     def __init__(self, config):
@@ -33,7 +224,7 @@ class Tadiff_model(LightningModule):
             num_heads=self.cfg.num_heads,
             geno=self.cfg.geno,
             )
-        
+        self.visualize = True
         # if self.cfg.precision=='16':
         #     self._model.convert_to_fp16()
         
@@ -68,6 +259,28 @@ class Tadiff_model(LightningModule):
         # self._model.load_state_dict(torch.load(path, map_location=device), strict=False)
         self._model.eval().to(device)
         print('Model Created!')
+
+    def _save_gray(self, img2d, path):
+        arr = img2d.detach().float().cpu().numpy()
+        plt.imsave(path, arr, cmap="gray")
+
+    @torch.no_grad()
+    def _debug_save_denoise_triplet(self, gt_img, xt, eps_pred, t_int, out_dir, prefix=""):
+        """
+        gt_img, xt, eps_pred: (B,3,H,W) tensors
+        t_int: int timestep used for xt
+        """
+        os.makedirs(out_dir, exist_ok=True)
+
+        # alphabar[t-1] is scalar
+        alphabar_t = self.diffusion.alphabar[t_int - 1].to(gt_img.device).view(1, 1, 1, 1)
+        x0_hat = (xt - torch.sqrt(1 - alphabar_t) * eps_pred) / (torch.sqrt(alphabar_t) + 1e-8)
+
+        modal_names = ["t1", "t1c", "flair"]
+        for m, name in enumerate(modal_names):
+            self._save_gray(gt_img[0, m],  os.path.join(out_dir, f"{prefix}x0_gt_{name}.png"))
+            self._save_gray(xt[0, m],      os.path.join(out_dir, f"{prefix}xt_t{t_int}_{name}.png"))
+            self._save_gray(x0_hat[0, m],  os.path.join(out_dir, f"{prefix}x0hat_{name}.png"))
 
     def configure_optimizers(self):
         if self.cfg.opt == 'adamw':
@@ -127,7 +340,7 @@ class Tadiff_model(LightningModule):
         # return optimizer
 
 
-    def get_loss(self, batch, mode='train'):
+    def get_loss(self, batch, epoch, mode='train'):
         imgs, label, days, treatments, geno = batch["image"], batch["label"], batch["days"], batch["treatments"], batch["geno"]
         n_sess = label.shape[1]
         
@@ -144,12 +357,7 @@ class Tadiff_model(LightningModule):
 
         import sys
         sys.stdout.flush()
-        # imgs: 5-D tensor [B, S, C, H, W]
-        #     B = batch size    S = number of sessions/timepoints   C = modalities (3: T1, T1c, FLAIR)
-        # label: [B, S, 4, H, W] (4 label channels per session)
-        # days: [B, 4] – the planned 4 timepoints (baseline, FU1, FU2, target) in days
-        # treatments: [B, 4] – treatment codes for those 4 timepoints
-        
+
         b, s, c, h, w = imgs.shape
         s1_days, s2_days, s3_days, t_days = days[:, 0], days[:,1], days[:, 2], days[:, 3]
         # Always use the future / target exam as the prediction target
@@ -194,7 +402,7 @@ class Tadiff_model(LightningModule):
         # xt: (B, C, H, W) – noised version of gt_img at timestep t.
         # epsilon: (B, C, H, W) – the true noise that was added (the diffusion target).
         xt, epsilon = self.diffusion.sample(gt_img.to(torch.float32), t)
-        
+        xt_img = xt 
         # First they mark sequences where the last historical session coincides with the target day:
         maskout_batch = (s3_days == t_days) 
         # Then for each batch element:
@@ -208,7 +416,6 @@ class Tadiff_model(LightningModule):
         #reshape to give, one giant image per batch, not a time sequence.
         xt = imgs.reshape(b, s*c, h, w).contiguous() 
         t = t.view(gt_img.shape[0]).to(self.device)
-                
         out = self.forward(xt.to(torch.float32), t.to(torch.float32), 
                            intv_t=intvs, treat_code=treat_cond, geno=geno, i_tg=i_tg)
 
@@ -257,8 +464,8 @@ class Tadiff_model(LightningModule):
         loss = loss1 + torch.mean(dice_loss) * self.cfg.aux_loss_w
         
         # mask_pred = F.sigmoid(mask_pred)
-        mask_pred = torch.sigmoid(mask_pred)
-        mask_pred = (mask_pred > 0.5) * 1  # fix threshold for segment mask 0.5
+        mask_pred1 = torch.sigmoid(mask_pred)
+        mask_pred = (mask_pred1 > 0.5) * 1  # fix threshold for segment mask 0.5
         self.dice_metric(mask_pred, label)
         dice_last =  self.dice_metric.aggregate() # only mean 4 mask dices
         self.dice_metric.reset()
@@ -270,9 +477,70 @@ class Tadiff_model(LightningModule):
         #     self.dice_metric(mask_pred[:, 3:4,:, :], label[:, 3:4, :, :])
         #     dice_last = self.dice_metric.aggregate()#.item() # only last masks 
         #     self.dice_metric.reset()
-        
+
+        if mode == 'val' and self.visualize:
+
+            # choose a fixed visualization timestep for val
+            fixed_t = int(getattr(self.cfg, "debug_vis_fixed_t", 50))
+            fixed_t = max(1, min(fixed_t, self.diffusion.T))  # clamp
+
+            # --- 1) build fixed timesteps tensor ---
+            t_vis = torch.full((b,), fixed_t, device=gt_img.device, dtype=torch.long)
+
+            # --- 2) create xt at this fixed timestep from the *clean* gt_img ---
+            # diffusion.sample expects t on CPU in your implementation
+            xt_vis, _ = self.diffusion.sample(gt_img.to(torch.float32), t_vis.cpu())
+            xt_vis = xt_vis.to(gt_img.device)  # (B, 3, H, W)
+
+            # --- 3) pack model input exactly like training: replace target session with xt_vis ---
+            imgs_vis = imgs.clone()  # imgs currently contains random-xt inserted; that's fine, we'll overwrite target
+
+            for i, j in zip(range(b), i_tg):
+                imgs_vis[i, j, :, :, :] = xt_vis[i]
+
+            x_in_vis = imgs_vis.reshape(b, s * c, h, w).contiguous()
+
+            # --- 4) run model at fixed t to get eps prediction ---
+            out_vis = self.forward(
+                x_in_vis.to(torch.float32),
+                t_vis.to(torch.float32),
+                intv_t=intvs,
+                treat_code=treat_cond,
+                geno=geno,
+                i_tg=i_tg
+            )
+            eps_pred_vis = out_vis[:, 4:7, :, :]   # (B, 3, H, W)
+
+            # --- 5) convert eps_pred -> x0_hat using alphabar at fixed_t ---
+            alphabar_t = self.diffusion.alphabar[fixed_t - 1].to(gt_img.device).view(1, 1, 1, 1)
+            x0_hat_vis = (xt_vis - torch.sqrt(1.0 - alphabar_t) * eps_pred_vis) / (torch.sqrt(alphabar_t) + 1e-8)
+
+            # --- (optional but recommended) clamp for stable visualization ---
+            # If your data is normalized to [-1, 1], keep this. If not, remove it.
+            x0_hat_vis = torch.clamp(x0_hat_vis, -1.0, 1.0)
+
+
+            predictions = {
+                'images': x0_hat_vis,     # <-- denoised estimate (x0_hat), NOT eps
+                'masks': mask_pred1,      # probs
+                'ground_truth': gt_img,   # x0
+                'target_masks': label
+            }
+            device = "cuda:0"
+            metrics = MetricsCalculator(device)
+
+            # Calculate metrics and save visualizations
+            slice_scores = evaluate_predictions(
+                predictions=predictions,
+                metrics=metrics,
+                session_idx=3,
+                slice_idx=2,
+                session_path= f"results/val/{epoch}"
+            )
+                
         return loss, mse, dice_last
 
+    
     
     def training_step(self, batch):
         loss, mse, dice_seg = self.get_loss(batch, mode='train')
