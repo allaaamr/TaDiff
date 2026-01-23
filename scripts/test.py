@@ -64,7 +64,7 @@ from torch.utils.data import Dataset
 
 import inspect
 import src.tadiff_net.diffusion as diffmod
-
+from src.data.datasampler import normalize_mri_per_modality
 print("DIFFUSION IMPORTED FROM:", diffmod.__file__)
 print("TaDiff_inverse signature:", inspect.signature(GaussianDiffusion.TaDiff_inverse))
 
@@ -514,13 +514,21 @@ def load_data(test_files, config: TestConfig):
 
 def setup_model(config: TestConfig, train_config, device: str):
     """Initialize and load model"""
+
+    ckpt = torch.load(config.model_checkpoint, map_location="cpu")
+    print(ckpt.keys())
+    print("hparams:", ckpt.get("hyper_parameters", {}).keys())
+    print("saved config:", ckpt.get("hyper_parameters", {}).get("config", None))
+
+
     model = Tadiff_model.load_from_checkpoint(
         config.model_checkpoint,
         model_channels=config.model_channels,
         num_heads=config.num_heads,
         num_res_blocks=config.num_res_blocks,
         strict=True,
-        config=train_config
+        config=train_config,
+        map_location="cuda:0"
     )
     model.to(device)
     model.eval()

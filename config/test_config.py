@@ -5,8 +5,8 @@ from typing import List, Optional
 class TestConfig:
     # Data paths
     data_root: str = "/home/alaa.mohamed/TaDiff/data/miu"
-    save_path: str = './results/miu_sadm/Patient-032'
-    model_checkpoint: str = "./ckpt_geno_false/last_fixed_tadiff.ckpt"
+    save_path: str = './results/sailor_tadiff/Patient-032'
+    model_checkpoint: str = "./checkpoints/ckpt/tadiff_811.ckpt"
 
 
     # Patient IDs to test
@@ -14,8 +14,8 @@ class TestConfig:
     
     # Model parameters
     model_channels: int = 32
-    num_heads: int = 4
-    num_res_blocks: int = 2
+    num_heads: int = 1
+    num_res_blocks: int = 1
     
     # Test parameters
     diffusion_steps: int = 1000

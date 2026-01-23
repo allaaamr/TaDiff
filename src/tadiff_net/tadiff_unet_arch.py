@@ -689,7 +689,7 @@ class TaDiff_Net(nn.Module):
         num_heads=1,
         num_head_channels=-1,
         num_heads_upsample=-1,
-        use_scale_shift_norm=True,
+        use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
         geno=True,
@@ -740,11 +740,11 @@ class TaDiff_Net(nn.Module):
                 linear(model_channels * 2, model_channels),
             )
         
-        self.geno_embed = nn.Sequential(
-            linear(geno_size, model_channels * 2),
-            nn.SiLU(),
-            linear(model_channels * 2, model_channels),
-        )
+        # self.geno_embed = nn.Sequential(
+        #     linear(geno_size, model_channels * 2),
+        #     nn.SiLU(),
+        #     linear(model_channels * 2, model_channels),
+        # )
         
         # self.ff_emb = FourierFeatures(1, model_channels)
         
@@ -752,8 +752,8 @@ class TaDiff_Net(nn.Module):
         print("HIII")
         all_time_day_dim = model_channels * 4
 
-        if self.geno:
-            all_time_day_dim = all_time_day_dim + model_channels
+        # if self.geno:
+        #     all_time_day_dim = all_time_day_dim + model_channels
         
         # self.layer_norm = nn.LayerNorm(all_time_day_dim)
         print("DEBUG all_time_day_dim =", all_time_day_dim)
@@ -775,7 +775,7 @@ class TaDiff_Net(nn.Module):
                         out_channels=int(mult * model_channels),
                         dims=dims,
                         use_checkpoint=use_checkpoint,
-                        use_scale_shift_norm=use_scale_shift_norm,
+                        use_scale_shift_norm=False,
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -817,21 +817,22 @@ class TaDiff_Net(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
-        if self.geno:    
-            cond_dim = model_channels  # assuming geno_feat is [B, model_channels]
-            self.middle_block = MiddleBlockWithCrossAttn(
-                ch=ch,
-                emb_ch=model_channels,      # keep as you had, or use all_time_day_dim if you prefer
-                dropout=dropout,
-                dims=dims,
-                use_checkpoint=use_checkpoint,
-                use_scale_shift_norm=use_scale_shift_norm,
-                num_heads=num_heads,
-                num_head_channels=num_head_channels,
-                cond_dim=cond_dim,
-            )
+        if self.geno:  
+            pass  
+            # cond_dim = model_channels  # assuming geno_feat is [B, model_channels]
+            # self.middle_block = MiddleBlockWithCrossAttn(
+            #     ch=ch,
+            #     emb_ch=model_channels,      # keep as you had, or use all_time_day_dim if you prefer
+            #     dropout=dropout,
+            #     dims=dims,
+            #     use_checkpoint=use_checkpoint,
+            #     use_scale_shift_norm=use_scale_shift_norm,
+            #     num_heads=num_heads,
+            #     num_head_channels=num_head_channels,
+            #     cond_dim=cond_dim,
+            # )
         else:
-                        self.middle_block = TimestepEmbedSequential(
+            self.middle_block = TimestepEmbedSequential(
                 ResBlock(
                     ch,
                     model_channels,
@@ -936,7 +937,6 @@ class TaDiff_Net(nn.Module):
         """
         hs = []
         b = x.shape[0]
-        
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
         if emb.shape[0] == 1 and b > 1:
             emb = emb.repeat(b, 1).contiguous()

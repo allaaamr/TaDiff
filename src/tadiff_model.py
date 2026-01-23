@@ -147,7 +147,9 @@ def evaluate_predictions(
         for j in range(3):  # For each modality
             pred_img = visualizer.to_pil(images['prediction'][j])
             gt_img = visualizer.to_pil(images['ground_truth'][j])
-            
+
+            # pred_img = images['prediction'][j]
+            # gt_img = images['ground_truth'][j]          
             # Save original images
             pred_img.save(os.path.join(session_path, f"{file_prefix}-pred-{modal_names[j]}.png"))
             gt_img.save(os.path.join(session_path, f"{file_prefix}-gt-{modal_names[j]}.png"))
@@ -282,6 +284,89 @@ class Tadiff_model(LightningModule):
             self._save_gray(xt[0, m],      os.path.join(out_dir, f"{prefix}xt_t{t_int}_{name}.png"))
             self._save_gray(x0_hat[0, m],  os.path.join(out_dir, f"{prefix}x0hat_{name}.png"))
 
+    @torch.no_grad()
+    def full_inverse_eval_once(self, batch, epoch, out_dir, num_samples=1):
+        self._model.eval()
+
+        # imgs = batch["image"].to(self.device)         # (B,S,C,H,W)
+        # label = batch["label"].to(self.device)        # (B,S, H,W) 
+        imgs0 = batch["image"].to(self.device).clone()     # clean copy
+        label0 = batch["label"].to(self.device).clone()
+        days = batch["days"].to(self.device)          # (B,S)
+        treatments = batch["treatments"].to(self.device)
+        geno = batch.get("geno", None)
+        if geno is not None:
+            geno = geno.to(self.device)
+
+        imgs = imgs0.clone()     # working tensor you can corrupt safely
+        label = label0.clone()
+
+        B, S, C, H, W = imgs.shape
+        assert S == 4 and C == 3, f"Expected (B,4,3,H,W) but got {imgs.shape}"
+
+        # use the first subject in batch, repeat num_samples times
+        seq_imgs = imgs[0:1].repeat(num_samples, 1, 1, 1, 1)     # (N,4,3,H,W)
+        masks = label[0:1].repeat(num_samples, 1, 1, 1)       # (N,4,H,W) if that's your label format
+        daysq = days[0:1].repeat(num_samples, 1)                 # (N,4)
+        treatments_q = treatments[0:1].repeat(num_samples, 1)    # (N,4)
+
+        # target session index (last session)
+        i_tg = torch.full((num_samples,), 3, dtype=torch.long, device=self.device)
+
+        # ground-truth target image
+        x_0 = seq_imgs[:, 3, :, :, :]                            # (N,3,H,W)
+
+        # start from PURE NOISE in target slot, keep history sessions intact
+        x_t = seq_imgs.clone()
+        x_t[:, 3, :, :, :] = torch.randn((num_samples, 3, H, W), device=self.device)
+
+        # flatten to TaDiff input format (N, 12, H, W)
+        x_in = x_t.reshape(num_samples, S * C, H, W).contiguous()
+
+        # IMPORTANT: use the SAME diffusion object as training (schedule & T)
+        # and start_t = T, steps = T for full inverse
+        T = int(self.diffusion.T)
+
+        pred_img, seg_seq = self.diffusion.TaDiff_inverse(
+            net=self,  # LightningModule has forward() defined -> ok
+            start_t=T,
+            steps=T,
+            x=x_in,
+            intv=[daysq[:, i].float() for i in range(4)],
+            treat_cond=[treatments_q[:, i].float() for i in range(4)],
+            i_tg=i_tg,
+            geno=geno,
+            device=self.device
+        )
+
+        # pred_img should be (N,3,H,W), seg_seq (N,4,H,W) or similar depending on impl
+        seg_seq = torch.sigmoid(seg_seq)
+        print("seq_seq " ,seg_seq.shape)
+        print("masks " ,masks.shape)
+
+        predictions = {
+            "images": pred_img,
+            "masks": seg_seq,
+            "ground_truth": x_0,
+            "target_masks": masks[:, :, :, :] 
+        }
+
+        metrics = MetricsCalculator(str(self.device))
+        evaluate_predictions(
+            predictions=predictions,
+            metrics=metrics,
+            session_idx=3,
+            slice_idx=2,
+            session_path=os.path.join(out_dir, f"epoch_{epoch}")
+        )
+
+        # print ranges to debug normalization mismatches
+        print("[FULL INV] GT  min/max/mean/std:",
+            x_0.min().item(), x_0.max().item(), x_0.mean().item(), x_0.std().item())
+        print("[FULL INV] GEN min/max/mean/std:",
+            pred_img.min().item(), pred_img.max().item(), pred_img.mean().item(), pred_img.std().item())
+
+
     def configure_optimizers(self):
         if self.cfg.opt == 'adamw':
             optimizer = AdamW(self.trainer.model.parameters(), 
@@ -340,40 +425,21 @@ class Tadiff_model(LightningModule):
         # return optimizer
 
 
-    def get_loss(self, batch, epoch, mode='train'):
-        imgs, label, days, treatments, geno = batch["image"], batch["label"], batch["days"], batch["treatments"], batch["geno"]
-        n_sess = label.shape[1]
+    def get_loss(self, batch, epoch, flag, mode='train'):
+        days, treatments, geno = batch["days"], batch["treatments"], batch["geno"]
         
-        # print("\n[DEBUG] get_loss() called")
-        # print(f"  imgs.shape       = {tuple(imgs.shape)}  (ndim={imgs.ndim})")
-        # print(f"  label.shape      = {tuple(label.shape)} (ndim={label.ndim})")
-        # print(f"  days.shape       = {tuple(days.shape)}  (ndim={days.ndim})")
-        # print(f"  treatments.shape = {tuple(treatments.shape)} (ndim={treatments.ndim})")
-        # print(f"  imgs dtype       = {imgs.dtype}, device = {imgs.device}")
-        # print(f"  label dtype      = {label.dtype}, device = {label.device}")
-        # # optional: look at a few values
-        # print(f"  days[0]          = {days[0]}")
-        # print(f"  treatments[0]    = {treatments[0]}")
+        imgs0 = batch["image"].to(self.device).clone()     # clean copy
+        label0 = batch["label"].to(self.device).clone()
+        n_sess = label0.shape[1]
 
-        import sys
-        sys.stdout.flush()
+        imgs = imgs0.clone()     # working tensor you can corrupt safely
+        label = label0.clone()
 
         b, s, c, h, w = imgs.shape
         s1_days, s2_days, s3_days, t_days = days[:, 0], days[:,1], days[:, 2], days[:, 3]
         # Always use the future / target exam as the prediction target
         # Here we assume the future scan is the last session (index -1).
         i_tg = -torch.ones((b,), dtype=torch.int64, device=self.device)
-        # if mode == 'train' and np.random.random_sample() > 0.5: 
-
-        #     # Goal: decide, for each patient in the batch, which session index the model should predict.
-        #     # pick a random integer from 0 .. S-1 for each patient.
-        #     i_tg = torch.randint(0, s, (b,), device=self.device)
-        #     i_tg[(s2_days != s1_days) * (s3_days == s2_days)] = -1 if np.random.random_sample() > 0.5 else 0
-        #     i_tg[(s2_days == s1_days) * (s3_days != s2_days)] = -1 if np.random.random_sample() > 0.5 else -2
-        # else:
-        #     # i_tg = -np.ones(b, dtype=np.int8)
-        #     i_tg = -torch.ones((b,), dtype=torch.int8, device=self.device)
-
 
         # Build conditioning vectors
         treat1, treat2, treat3, treat_t = treatments[:,0], treatments[:,1], treatments[:,2], treatments[:,3]
@@ -382,19 +448,13 @@ class Tadiff_model(LightningModule):
         
         # Extract the target image & mask
 
-        # gt_img = torch.cat([imgs[[i], j, :, :, :] for i, j in zip(range(b), i_tg)], dim=0)
-        # gt_label = torch.cat([label[[i], j, :, :] for i, j in zip(range(b), i_tg)], dim=0)
-        # t = torch.randint(1, self.diffusion.T + 1, [gt_img.shape[0]]) # , device=self.device
-        # w_tg = self.alphabar[t-1]
-
         idx_b = torch.arange(b, device=imgs.device)          # [0, 1, ..., B-1]
         idx_s = i_tg.to(imgs.device).long()                  # target session index per batch
         # imgs: [B, S, C, H, W] -> gt_img: [B, C, H, W]
-        gt_img = imgs[idx_b, idx_s, ...].to(torch.float32)
+        gt_img = imgs0[idx_b, idx_s, ...].to(torch.float32)
 
-        # label: [B, S, 4, H, W] -> gt_label: [B, 4, H, W]
-        gt_label = label[idx_b, idx_s, ...].to(torch.float32)
-
+        # label: [B, S, 4, H, W] -> gt_label: [B, C, H, W]
+        gt_label = label0[idx_b, idx_s, ...].to(torch.float32)
         t = torch.randint(1, self.diffusion.T + 1, [gt_img.shape[0]])
         w_tg = self.alphabar[t - 1]
         
@@ -478,7 +538,7 @@ class Tadiff_model(LightningModule):
         #     dice_last = self.dice_metric.aggregate()#.item() # only last masks 
         #     self.dice_metric.reset()
 
-        if mode == 'val' and self.visualize:
+        if mode == 'val' and flag and epoch%10 == 0:
 
             # choose a fixed visualization timestep for val
             fixed_t = int(getattr(self.cfg, "debug_vis_fixed_t", 50))
@@ -517,7 +577,7 @@ class Tadiff_model(LightningModule):
 
             # --- (optional but recommended) clamp for stable visualization ---
             # If your data is normalized to [-1, 1], keep this. If not, remove it.
-            x0_hat_vis = torch.clamp(x0_hat_vis, -1.0, 1.0)
+            # x0_hat_vis = torch.clamp(x0_hat_vis, -1.0, 1.0)
 
 
             predictions = {
@@ -535,8 +595,17 @@ class Tadiff_model(LightningModule):
                 metrics=metrics,
                 session_idx=3,
                 slice_idx=2,
-                session_path= f"results/val/{epoch}"
+                session_path= f"results/tadiff_1PCos_single_inverse/{epoch}"
             )
+
+            
+            self.full_inverse_eval_once(
+                batch=batch,
+                epoch=epoch,
+                out_dir="results/tadiff_1PCos_full_inverse",
+                num_samples=1
+            )
+
                 
         return loss, mse, dice_last
 

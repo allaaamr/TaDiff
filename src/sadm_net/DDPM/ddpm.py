@@ -462,8 +462,10 @@ class DDPM(nn.Module):
             # Guidance
             pred_noise = pred_uncond + guidance_scale * (pred_cond - pred_uncond)
         else:
-            pred_noise = self.nn_model(x_t, t_tensor, cond, cond_tokens)[:, :in_ch]
-        
+            out = self.nn_model(x_t, t_tensor, cond, cond_tokens)
+            pred_noise = pred_noise[:, :in_ch]
+            segmentation = pred_noise[:, 0]
+
         # Compute x_{t-1}
         alpha_t = self.alphas[t]
         alpha_cumprod_t = self.alphas_cumprod[t]
@@ -481,7 +483,7 @@ class DDPM(nn.Module):
         else:
             x_prev = mean
         
-        return x_prev
+        return x_prev, segmentation
     
     @torch.no_grad()
     def sample(
@@ -513,13 +515,13 @@ class DDPM(nn.Module):
         
         # Reverse diffusion
         for t in reversed(range(self.n_T)):
-            x_t = self.p_sample(x_t, t, cond, cond_tokens, guidance_scale)
+            x_t, seg = self.p_sample(x_t, t, cond, cond_tokens, guidance_scale)
             if return_intermediates:
                 intermediates.append(x_t)
         
         if return_intermediates:
             return x_t, intermediates
-        return x_t
+        return x_t, seg
 
 
 if __name__ == "__main__":

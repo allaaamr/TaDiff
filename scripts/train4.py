@@ -19,6 +19,7 @@ from typing import Dict, List
 from tqdm import tqdm
 import wandb
 from monai.data import CacheDataset, DataLoader
+import pytorch_lightning as pl
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -43,6 +44,8 @@ def process_slice_train(
     model: SADM,
     optimizer: torch.optim.Optimizer,
     geno: torch.Tensor,
+    epoch: int,
+    flag: bool,
     mode: str = 'train',
 ) -> Dict[str, float]:
     """
@@ -77,46 +80,6 @@ def process_slice_train(
     n_sessions = imgs_slice.shape[1]
     n_timepoints = days.shape[1]
     
-    # print(f"\n[BEFORE SELECTION] slice_idx={slice_idx}")
-    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    # print(f"  days: {days.shape}, treatments: {treatments.shape}, geno: {geno.shape}, ")
-    
-    # # Model expects exactly 4 sessions and 4 timepoints
-    # # Select last 4 sessions (most recent)
-    
-    # if n_sessions > 4:
-    #     imgs_slice = imgs_slice[:, -4:, :, :, :]  # [1, 4, C, H, W]
-    #     labels_slice = labels_slice[:, -4:, :, :]  # [1, 4, H, W]
-    # elif n_sessions < 4:
-    #     # Pad by repeating last session
-    #     pad_sessions = 4 - n_sessions
-    #     imgs_slice = torch.cat([
-    #         imgs_slice,
-    #         imgs_slice[:, -1:, :, :, :].repeat(1, pad_sessions, 1, 1, 1)
-    #     ], dim=1)
-    #     labels_slice = torch.cat([
-    #         labels_slice,
-    #         labels_slice[:, -1:, :, :].repeat(1, pad_sessions, 1, 1)
-    #     ], dim=1)
-    
-    # # Select corresponding timepoints (last 4)
-    # if n_timepoints > 4:
-    #     days = days[:, -4:]  # [1, 4]
-    #     treatments = treatments[:, -4:]  # [1, 4]
-    # elif n_timepoints < 4:
-    #     # Pad by repeating last timepoint
-    #     pad_timepoints = 4 - n_timepoints
-    #     days = torch.cat([days, days[:, -1:].repeat(1, pad_timepoints)], dim=1)
-    #     treatments = torch.cat([treatments, treatments[:, -1:].repeat(1, pad_timepoints)], dim=1)
-    
-    # print(f"[AFTER SELECTION]")
-    # print(f"  imgs_slice: {imgs_slice.shape}, labels_slice: {labels_slice.shape}")
-    # print(f"  days: {days.shape}, treatments: {treatments.shape}")
-    
-    # Expand labels to 4 channels (model expects [B, S, 4, H, W])
-    # labels_slice = labels_slice.unsqueeze(2).repeat(1, 1, 4, 1, 1)  # [1, 4, 4, H, W]
-    
-    # Create batch dict (what get_loss expects)
     batch = {
         'image': imgs_slice,
         'label': labels_slice,
@@ -128,7 +91,7 @@ def process_slice_train(
     # Call the existing get_loss() - it does everything!
     if mode == 'train':
         model.train()
-        loss, mse, dice = model.get_loss(batch, mode='train')
+        loss, mse, dice = model.get_loss(batch, epoch, flag, mode='train')
         # Backward
         optimizer.zero_grad()
         loss.backward()
@@ -141,7 +104,7 @@ def process_slice_train(
     else:
         model.eval()
         with torch.no_grad():
-            loss, mse, dice = model.get_loss(batch, mode='val')
+            loss, mse, dice = model.get_loss(batch, epoch, flag, mode='val')
     
     return {
         'loss': loss.item(),
@@ -155,6 +118,8 @@ def process_session_train(
     model: SADM,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
+    epoch: int,
+    flag: bool,
     top_k: int = 3,
     mode: str = 'train'
 ) -> Dict[str, float]:
@@ -208,6 +173,8 @@ def process_session_train(
             treatments=treatments,
             model=model,
             optimizer=optimizer if mode == 'train' else None,
+            epoch = epoch,
+            flag = flag,
             geno=geno,
             mode=mode,
         )
@@ -241,6 +208,8 @@ def train_epoch(
             model=model,
             optimizer=optimizer,
             device=device,
+            epoch = epoch ,
+            flag = False,
             top_k=3,
             mode='train'
         )
@@ -272,7 +241,7 @@ def validate_epoch(
     """Validate for one epoch."""
     model.eval()
     epoch_metrics = []
-    
+    flag = True
     with torch.no_grad():
         pbar = tqdm(dataloader, desc=f"Epoch {epoch} [Val]")
         for batch_idx, batch in enumerate(pbar):
@@ -281,11 +250,13 @@ def validate_epoch(
                 model=model,
                 optimizer=None,
                 device=device,
+                epoch = epoch,
+                flag = flag,
                 top_k=3,
                 mode='val'
             )
             epoch_metrics.append(metrics)
-            
+            flag = False
             pbar.set_postfix({
                 'loss': f"{metrics['loss']:.4f}",
                 'mse': f"{metrics['mse']:.4f}",
@@ -370,7 +341,7 @@ def main():
     }
     )
     
-    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 15), rng_seed=getattr(config, "rng_seed", None))
+    train_dataset = PatientSamplingDataset(train_files, transform=None, samples_per_patient=getattr(config, "samples_per_patient", 30), rng_seed=getattr(config, "rng_seed", None))
     val_dataset = PatientSamplingDataset(val_files, transform=None, samples_per_patient=getattr(config, "val_samples_per_patient", 10), rng_seed=getattr(config, "rng_seed", None))
     
     print(f"\n{'='*70}")
@@ -393,10 +364,11 @@ def main():
     
     model = SADM(
         img_size=config.image_size,
-        in_channels=config.in_channels,
-        # out_channels=config.in_channels + 4,  # image + 4 seg classes
+        in_channels=config.in_channels, # image + 4 seg classes
         embed_dim=256,
         model_channels=config.model_channels,
+        num_res_blocks = config.num_res_blocks,
+        num_heads = config.num_heads,
         n_T=config.max_T,
         device=str(device),
     ).to(device)
@@ -455,9 +427,10 @@ def main():
             best_val_dice = val_metrics['dice']
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': model.state_dict(),
+                'state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'val_dice': best_val_dice,
+                'pytorch-lightning_version' : pl.__version__
             }, os.path.join(config.logdir, 'best.ckpt'))
             print(f"✓ Saved best model (dice: {best_val_dice:.4f})")
         

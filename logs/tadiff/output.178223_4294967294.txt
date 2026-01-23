@@ -1,0 +1,102 @@
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torchmetrics/utilities/imports.py:22: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+wandb: Currently logged in as: allaaamr (allaaamr-mbzuai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run 2yoq52au
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /home/alaa.mohamed/TaDiff/wandb/run-20260118_132417-2yoq52au
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run run_miu
+wandb: ⭐️ View project at https://wandb.ai/allaaamr-mbzuai/SADM
+wandb: 🚀 View run at https://wandb.ai/allaaamr-mbzuai/SADM/runs/2yoq52au
+WOHO
+
+Using device: cuda:0
+
+======================================================================
+SADM Training
+======================================================================
+Data directory: /home/alaa.mohamed/TaDiff/data/miu
+Max epochs: 1000
+Learning rate: 0.005
+======================================================================
+
+Loaded splits:
+  Train: 34 patients
+  Val: 7 patients
+
+Valid files:
+  Train: 34 patients
+  Val: 7 patients
+
+
+======================================================================
+Sliding Window Statistics:
+======================================================================
+Train patients: 34 → Training points: 34
+Val patients: 7 → Validation points: 77
+Avg windows per train patient: 1.0
+Avg windows per val patient: 11.0
+======================================================================
+
+
+======================================================================
+Creating SADM Model
+======================================================================
+
+============================================================
+SADM Model Configuration:
+  Image size: 240x240
+  Patch size: 20
+  Channels per session: 3
+  Segmentation classes: 1
+  Output channels: 4 (seg: 1, noise: 3)
+  Max sessions: 4
+  Genomic dim: 13
+============================================================
+
+
+Model initialized:
+  Total parameters: 76,122,820
+  Trainable: 76,122,820
+
+======================================================================
+Starting Training
+======================================================================
+
+Epoch 0 [Train]:   0%|          | 0/34 [00:00<?, ?it/s]Epoch 0 [Train]:   0%|          | 0/34 [00:03<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/alaa.mohamed/TaDiff/scripts/train4.py", line 458, in <module>
+    main()
+  File "/home/alaa.mohamed/TaDiff/scripts/train4.py", line 402, in main
+    train_metrics = train_epoch(model, train_loader, optimizer, device, epoch)
+  File "/home/alaa.mohamed/TaDiff/scripts/train4.py", line 205, in train_epoch
+    metrics = process_session_train(
+  File "/home/alaa.mohamed/TaDiff/scripts/train4.py", line 167, in process_session_train
+    metrics = process_slice_train(
+  File "/home/alaa.mohamed/TaDiff/scripts/train4.py", line 93, in process_slice_train
+    loss, mse, dice = model.get_loss(batch, epoch, flag, mode='train')
+  File "/home/alaa.mohamed/TaDiff/src/sadm_model.py", line 505, in get_loss
+    out = self.unet(xt, t_float, cond_global, cond_tokens)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/alaa.mohamed/TaDiff/src/sadm_net/DDPM/ddpm.py", line 250, in forward
+    h = self.input_proj(x)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 458, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 454, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [1, 1, 3, 240, 240]
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mrun_miu[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20260118_132417-2yoq52au/logs[0m
+srun: error: gpu-02: task 0: Exited with exit code 1

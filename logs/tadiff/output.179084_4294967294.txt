@@ -1,0 +1,68 @@
+/home/alaa.mohamed/.conda/envs/wm/lib/python3.10/site-packages/torchmetrics/utilities/imports.py:22: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+wandb: Currently logged in as: allaaamr (allaaamr-mbzuai) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run dtgtf8c8
+wandb: Tracking run with wandb version 0.23.1
+wandb: Run data is saved locally in /home/alaa.mohamed/TaDiff/wandb/run-20260120_233904-dtgtf8c8
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run run_miu
+wandb: ⭐️ View project at https://wandb.ai/allaaamr-mbzuai/SADM
+wandb: 🚀 View run at https://wandb.ai/allaaamr-mbzuai/SADM/runs/dtgtf8c8
+WOHO
+
+Using device: cuda:0
+
+======================================================================
+SADM Training
+======================================================================
+Data directory: /home/alaa.mohamed/TaDiff/data/miu
+Max epochs: 2000
+Learning rate: 0.0001
+======================================================================
+
+Loaded splits:
+  Train: 34 patients
+  Val: 7 patients
+
+Valid files:
+  Train: 34 patients
+  Val: 7 patients
+
+
+======================================================================
+Sliding Window Statistics:
+======================================================================
+Train patients: 34 → Training points: 1020
+Val patients: 7 → Validation points: 70
+Avg windows per train patient: 30.0
+Avg windows per val patient: 10.0
+======================================================================
+
+
+======================================================================
+Creating SADM Model
+======================================================================
+
+============================================================
+SADM Model Configuration:
+  Image size: 240x240
+  Patch size: 20
+  Channels per session: 3
+  Segmentation classes: 1
+  Output channels: 4 (seg: 1, noise: 3)
+  Max sessions: 4
+  Genomic dim: 13
+============================================================
+
+
+Model initialized:
+  Total parameters: 120,268,676
+  Trainable: 120,268,676
+
+======================================================================
+Starting Training
+======================================================================
+
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd-gpu-02: error: *** JOB 179084 ON gpu-02 CANCELLED AT 2026-01-20T23:39:17 ***
+Epoch 0 [Train]:   0%|          | 0/1020 [00:00<?, ?it/s]Epoch 0 [Train]:   0%|          | 0/1020 [00:02<?, ?it/s, loss=0.9974, dice=0.0890]Epoch 0 [Train]:   0%|          | 1/1020 [00:02<38:29,  2.27s/it, loss=0.9974, dice=0.0890]Epoch 0 [Train]:   0%|          | 1/1020 [00:03<38:29,  2.27s/it, loss=0.9673, dice=0.0834]Epoch 0 [Train]:   0%|          | 2/1020 [00:03<30:00,  1.77s/it, loss=0.9673, dice=0.0834]Epoch 0 [Train]:   0%|          | 2/1020 [00:05<30:00,  1.77s/it, loss=0.9416, dice=0.0284]Epoch 0 [Train]:   0%|          | 3/1020 [00:05<26:43,  1.58s/it, loss=0.9416, dice=0.0284]Epoch 0 [Train]:   0%|          | 3/1020 [00:06<26:43,  1.58s/it, loss=0.9390, dice=0.0421]Epoch 0 [Train]:   0%|          | 4/1020 [00:06<28:10,  1.66s/it, loss=0.9390, dice=0.0421]Epoch 0 [Train]:   0%|          | 4/1020 [00:08<28:10,  1.66s/it, loss=0.9201, dice=0.0880]Epoch 0 [Train]:   0%|          | 5/1020 [00:08<26:39,  1.58s/it, loss=0.9201, dice=0.0880]slurmstepd-gpu-02: error: *** STEP 179084.0 ON gpu-02 CANCELLED AT 2026-01-20T23:39:17 ***

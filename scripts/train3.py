@@ -135,6 +135,7 @@ def process_slice_train(
     optimizer: torch.optim.Optimizer,
     geno: torch.Tensor,
     epoch: int,
+    flag: bool,
     mode: str = 'train',
 ) -> Dict[str, float]:
     """
@@ -180,7 +181,7 @@ def process_slice_train(
     # Call the existing get_loss() - it does everything!
     if mode == 'train':
         model.train()
-        loss, mse, dice = model.get_loss(batch, epoch, mode='train')
+        loss, mse, dice = model.get_loss(batch, epoch, flag, mode='train')
         # Backward
         optimizer.zero_grad()
         loss.backward()
@@ -196,7 +197,7 @@ def process_slice_train(
     else:
         model.eval()
         with torch.no_grad():
-            loss, mse, dice = model.get_loss(batch, epoch, mode='val')
+            loss, mse, dice = model.get_loss(batch, epoch,flag, mode='val')
     
     return {
         'loss': loss.item(),
@@ -211,6 +212,7 @@ def process_session_train(
     optimizer: torch.optim.Optimizer,
     device: torch.device,
     epoch: int,
+    flag: bool,
     top_k: int = 3,
     mode: str = 'train'
 ) -> Dict[str, float]:
@@ -267,7 +269,8 @@ def process_session_train(
             optimizer=optimizer if mode == 'train' else None,
             mode=mode,
             geno=geno,
-            epoch=epoch
+            epoch=epoch,
+            flag=flag,
         )
         slice_metrics.append(metrics)
     
@@ -300,6 +303,7 @@ def train_epoch(
             optimizer=optimizer,
             device=device,
             epoch=epoch,
+            flag= False,
             top_k=3,
             mode='train'
         )
@@ -331,7 +335,7 @@ def validate_epoch(
     """Validate for one epoch."""
     model.eval()
     epoch_metrics = []
-    
+    flag = True
 
     with torch.no_grad():
         pbar = tqdm(dataloader, desc=f"Epoch {epoch} [Val]")
@@ -342,11 +346,12 @@ def validate_epoch(
                 optimizer=None,
                 device=device,
                 epoch=epoch,
+                flag = flag,
                 top_k=3,
                 mode='val'
             )
             epoch_metrics.append(metrics)
-            
+            flag = False
             pbar.set_postfix({
                 'loss': f"{metrics['loss']:.4f}",
                 'mse': f"{metrics['mse']:.4f}",

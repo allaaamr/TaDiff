@@ -12,4 +12,4 @@
 
 source /apps/local/anaconda3/conda_init.sh
 conda activate wm    
-srun python -m scripts.train3
+srun python -m scripts.train4
